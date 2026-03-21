@@ -1,0 +1,334 @@
+--[[
+    Script: Rayfield Fly GUI (Clone của Universal Script Better Fly GUI)
+    Tính năng: Bay chính xác như script gốc, hỗ trợ noclip, tốc độ xoay, 2 phương thức bay
+    Cấu hình mặc định: rotationSpeed = 1, noclipfly = true, useV3Method = false
+--]]
+
+-- Kiểm tra và load Rayfield nếu chưa có
+if not game:GetService("CoreGui"):FindFirstChild("Rayfield") then
+    local RayfieldLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+    wait(1)
+end
+
+local Rayfield = require(game:GetService("CoreGui"):WaitForChild("Rayfield").Client)
+
+-- Tạo Window chính
+local Window = Rayfield:CreateWindow({
+    Name = "Better Fly GUI",
+    Icon = 0,
+    LoadingTitle = "Đang tải Fly GUI...",
+    LoadingSubtitle = "by Rayfield",
+    Theme = "Default",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "BetterFlyGUI",
+        FileName = "Settings"
+    },
+    Keybind = {
+        Enabled = true,
+        Key = "RightAlt",
+        HoldToInteract = false
+    }
+})
+
+-- Tạo các Tab
+local MainTab = Window:CreateTab("Điều khiển bay", 4483362458)
+local SettingsTab = Window:CreateTab("Cài đặt", 4483362458)
+local InfoTab = Window:CreateTab("Thông tin", 4483362458)
+
+-- Biến toàn cục (giống cấu hình gốc)
+getgenv().rotationSpeed = 1
+getgenv().noclipfly = true
+getgenv().useV3Method = false
+
+local flying = false
+local noclip = getgenv().noclipfly
+local speed = 50
+local rotationSpeed = getgenv().rotationSpeed
+local useV3Method = getgenv().useV3Method
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Biến cho cơ chế bay
+local bodyVelocity = nil
+local bodyGyro = nil
+local vehicleSeat = nil
+local lc = nil
+
+-- Hàm tạo VehicleSeat cho phương thức V3
+local function createVehicleSeat()
+    local seat = Instance.new("VehicleSeat")
+    seat.CanCollide = false
+    seat.Transparency = 1
+    seat.Anchored = false
+    seat.Parent = character
+    seat.Position = hrp.Position
+    return seat
+end
+
+-- Hàm xóa các bộ điều khiển cũ
+local function clearFlyControls()
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+    if vehicleSeat then vehicleSeat:Destroy() end
+    if lc then lc:Disconnect() end
+    bodyVelocity = nil
+    bodyGyro = nil
+    vehicleSeat = nil
+    lc = nil
+end
+
+-- Hàm bật/tắt noclip (giống script gốc)
+local function setNoclip(state)
+    noclip = state
+    getgenv().noclipfly = state
+    
+    local function applyNoclip(char)
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = not noclip
+            end
+        end
+    end
+    
+    if noclip then
+        player.CharacterAdded:Connect(function(char)
+            char:WaitForChild("HumanoidRootPart")
+            applyNoclip(char)
+        end)
+        applyNoclip(character)
+    else
+        applyNoclip(character)
+    end
+end
+
+-- Phương thức bay V2 (BodyVelocity + BodyGyro) - Giống script gốc
+local function startFlyV2()
+    clearFlyControls()
+    
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyGyro = Instance.new("BodyGyro")
+    
+    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVelocity.P = 1e4
+    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bodyGyro.P = 1e4
+    bodyGyro.CFrame = hrp.CFrame
+    
+    bodyVelocity.Parent = hrp
+    bodyGyro.Parent = hrp
+    
+    lc = game:GetService("RunService").RenderStepped:Connect(function()
+        if not flying then return end
+        
+        local moveDirection = Vector3.new()
+        local forward = hrp.CFrame.LookVector
+        local right = hrp.CFrame.RightVector
+        local up = hrp.CFrame.UpVector
+        
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+            moveDirection = moveDirection + forward
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+            moveDirection = moveDirection - forward
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+            moveDirection = moveDirection + right
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+            moveDirection = moveDirection - right
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+            moveDirection = moveDirection + up
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+            moveDirection = moveDirection - up
+        end
+        
+        if moveDirection.Magnitude > 0 then
+            moveDirection = moveDirection.Unit
+        end
+        
+        bodyVelocity.Velocity = moveDirection * speed
+        bodyGyro.CFrame = hrp.CFrame * CFrame.Angles(0, 0, 0)
+    end)
+end
+
+-- Phương thức bay V3 (VehicleSeat) - Giống script gốc
+local function startFlyV3()
+    clearFlyControls()
+    
+    vehicleSeat = createVehicleSeat()
+    humanoid.Sit = true
+    
+    lc = game:GetService("RunService").RenderStepped:Connect(function()
+        if not flying or not vehicleSeat then return end
+        
+        local moveDirection = Vector3.new()
+        local forward = hrp.CFrame.LookVector
+        local right = hrp.CFrame.RightVector
+        local up = hrp.CFrame.UpVector
+        
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+            moveDirection = moveDirection + forward
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+            moveDirection = moveDirection - forward
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+            moveDirection = moveDirection + right
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+            moveDirection = moveDirection - right
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+            moveDirection = moveDirection + up
+        end
+        if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+            moveDirection = moveDirection - up
+        end
+        
+        if moveDirection.Magnitude > 0 then
+            moveDirection = moveDirection.Unit
+        end
+        
+        vehicleSeat.Velocity = moveDirection * speed
+        vehicleSeat.Steer = 0
+        vehicleSeat.Throttle = 0
+    end)
+end
+
+-- Hàm bật/tắt bay
+local function toggleFly(state)
+    flying = state
+    
+    if flying then
+        if useV3Method then
+            startFlyV3()
+        else
+            startFlyV2()
+        end
+        
+        -- Giữ nguyên trạng thái noclip
+        setNoclip(noclip)
+        
+        -- Ẩn thanh trượt (optional)
+        humanoid.PlatformStand = true
+    else
+        clearFlyControls()
+        humanoid.PlatformStand = false
+        humanoid.Sit = false
+        setNoclip(false)
+    end
+end
+
+-- ==================== TẠO GIAO DIỆN RAYFIELD ====================
+
+-- Main Tab: Điều khiển bay
+local FlyButton = MainTab:CreateButton({
+    Name = "BẬT/TẮT BAY",
+    Callback = function()
+        toggleFly(not flying)
+        FlyButton:Set(flying and "ĐANG BAY" or "ĐÃ TẮT BAY", flying and "Đang bay..." or "Nhấn để bay")
+    end
+})
+
+MainTab:CreateSlider({
+    Name = "Tốc độ bay",
+    Range = {10, 200},
+    Increment = 5,
+    CurrentValue = speed,
+    Flag = "FlySpeed",
+    Callback = function(v)
+        speed = v
+    end
+})
+
+-- Settings Tab: Cấu hình
+SettingsTab:CreateToggle({
+    Name = "Noclip (xuyên tường)",
+    CurrentValue = noclip,
+    Flag = "Noclip",
+    Callback = function(v)
+        setNoclip(v)
+    end
+})
+
+SettingsTab:CreateToggle({
+    Name = "Phương thức bay V3 (VehicleSeat)",
+    CurrentValue = useV3Method,
+    Flag = "V3Method",
+    Callback = function(v)
+        useV3Method = v
+        getgenv().useV3Method = v
+        if flying then
+            toggleFly(false)
+            toggleFly(true)
+        end
+    end
+})
+
+SettingsTab:CreateSlider({
+    Name = "Tốc độ xoay (Rotation Speed)",
+    Range = {0, 5},
+    Increment = 0.1,
+    CurrentValue = rotationSpeed,
+    Flag = "RotationSpeed",
+    Callback = function(v)
+        rotationSpeed = v
+        getgenv().rotationSpeed = v
+        -- Có thể thêm hiệu ứng xoay ở đây nếu muốn
+    end
+})
+
+-- Info Tab: Thông tin
+InfoTab:CreateParagraph({
+    Title = "Better Fly GUI",
+    Content = "Script bay mạnh mẽ với Rayfield UI\n\n" ..
+              "Tính năng:\n" ..
+              "• Bay tự do với phím WASD + Space/Ctrl\n" ..
+              "• Hỗ trợ noclip xuyên tường\n" ..
+              "• 2 phương thức bay: BodyVelocity và VehicleSeat\n" ..
+              "• Tùy chỉnh tốc độ bay và tốc độ xoay\n" ..
+              "• Lưu cấu hình tự động\n\n" ..
+              "Cảm ơn bạn đã sử dụng!"
+})
+
+InfoTab:CreateButton({
+    Name = "Lấy script gốc",
+    Callback = function()
+        setclipboard("loadstring(game:HttpGet('https://rawscripts.net/raw/Universal-Script-Better-Fly-GUI-44304'))()")
+        Rayfield:Notify({
+            Title = "Đã copy!",
+            Content = "Script gốc đã được copy vào clipboard",
+            Duration = 3
+        })
+    end
+})
+
+-- Thông báo khởi động
+Rayfield:Notify({
+    Title = "Better Fly GUI",
+    Content = "Đã tải thành công! Nhấn RightAlt để mở menu.",
+    Duration = 5
+})
+
+-- Xử lý khi nhân vật respawn
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = character:WaitForChild("Humanoid")
+    hrp = character:WaitForChild("HumanoidRootPart")
+    
+    if flying then
+        toggleFly(false)
+        wait(1)
+        toggleFly(true)
+    end
+    
+    if noclip then
+        setNoclip(true)
+    end
+end)
