@@ -327,4 +327,3 @@ end)
 if not success then
 	warn("[Chuppy Hub Secure Wrapper Error]: " .. tostring(result))
 end
-
