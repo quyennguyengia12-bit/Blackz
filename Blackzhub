@@ -1,0 +1,65 @@
+-- BLACKZ HUB v10.0 RATS DUPE | Fly & Infinite Jump Only
+local TweenService = game:GetService("TweenService")
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+local LP = Players.LocalPlayer
+local Char, HRP, Hum
+
+local Fly = false; local FlySpeed = 150; local AutoUp = true
+local Godmode = false; local Noclip = false; local InfiniteJump = false
+local WalkSpeedVal = 50
+
+local function LoadChar() Char = LP.Character or LP.CharacterAdded:Wait(); Hum = Char:WaitForChild("Humanoid"); HRP = Char:WaitForChild("HumanoidRootPart"); Hum.WalkSpeed = WalkSpeedVal end
+LoadChar(); LP.CharacterAdded:Connect(LoadChar)
+
+-- Fly (enhanced speed)
+RunService.RenderStepped:Connect(function(dt)
+    pcall(function()
+        if Fly and HRP and Hum then Hum.PlatformStand = true
+            local cam = Workspace.CurrentCamera; local move = cam.CFrame.LookVector * FlySpeed * dt * 1.5
+            local up = AutoUp and Vector3.new(0, FlySpeed * dt * 3, 0) or Vector3.new()
+            HRP.CFrame = HRP.CFrame + move + up; HRP.Velocity = Vector3.new(0,0,0)
+        elseif Hum then Hum.PlatformStand = false end
+    end)
+end)
+
+UserInputService.JumpRequest:Connect(function() if InfiniteJump and Hum then Hum:ChangeState(Enum.HumanoidStateType.Jumping) end end)
+
+-- Noclip Xuyên Tường FAST
+spawn(function() while task.wait(0.05) do pcall(function() if Noclip and Char then for _, p in pairs(Char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end end) end end)
+
+-- Godmode FAST
+spawn(function() while task.wait(0.1) do pcall(function() if Godmode and Hum then Hum.Health = Hum.MaxHealth end end) end end)
+
+-- WalkSpeed
+spawn(function() while task.wait() do pcall(function() if Hum then Hum.WalkSpeed = WalkSpeedVal; Hum.JumpPower = 100 end end) end end)
+
+-- RAYFIELD UI CONFIG (Updated Title)
+local Window = Rayfield:CreateWindow({
+    Name = "Black Z Fly and Infinity", 
+    LoadingTitle = "Black Z Fly and Infinity", 
+    LoadingSubtitle = "Optimized for Delta"
+})
+
+local MainTab = Window:CreateTab("🤖 Main Farm"); local MiscTab = Window:CreateTab("⚙️ Misc");
+
+MainTab:CreateToggle({Name = "Fly (Rats Speed)", CurrentValue = false, Callback = function(v) Fly = v end})
+MainTab:CreateToggle({Name = "Auto Up", CurrentValue = true, Callback = function(v) AutoUp = v end})
+MainTab:CreateSlider({Name = "Fly Speed", Range = {100, 500}, Increment = 20, Suffix = "", CurrentValue = 150, Callback = function(v) FlySpeed = v end})
+MainTab:CreateToggle({Name = "Infinite Jump", CurrentValue = false, Callback = function(v) InfiniteJump = v end})
+
+MiscTab:CreateToggle({Name = "Godmode", CurrentValue = false, Callback = function(v) Godmode = v end})
+MiscTab:CreateToggle({Name = "Noclip Xuyên Tường", CurrentValue = false, Callback = function(v) Noclip = v end})
+MiscTab:CreateSlider({Name = "WalkSpeed", Range = {16, 300}, Increment = 10, Suffix = "", CurrentValue = 50, Callback = function(v) WalkSpeedVal = v end})
+
+Rayfield:Notify({
+    Title = "Black Z Fly and Infinity", 
+    Content = "Đã thêm tính năng Godmode và Noclip thành công!", 
+    Duration = 8, 
+    Image = "rbxassetid://4483345998"
+})
