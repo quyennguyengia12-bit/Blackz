@@ -1,0 +1,2063 @@
+--[[
+ .____                  ________ ___.    _____                           __                
+ |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
+ |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
+ |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
+ |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
+         \/          \/         \/    \/                \/     \/     \/                   
+          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+
+]]--
+
+local TweenService = game:GetService("TweenService");
+local Players = game:GetService("Players");
+local RunService = game:GetService("RunService");
+local Workspace = game:GetService("Workspace");
+local UserInputService = game:GetService("UserInputService");
+local CoreGui = game:GetService("CoreGui");
+local Lighting = game:GetService("Lighting");
+local TeleportService = game:GetService("TeleportService");
+local HttpService = game:GetService("HttpService");
+local StarterGui = game:GetService("StarterGui");
+local VirtualInputManager = game:GetService("VirtualInputManager");
+local LP = Players.LocalPlayer;
+local Mouse = LP:GetMouse();
+local Camera = Workspace.CurrentCamera;
+local Char, HRP, Hum;
+local ThemeColor = Color3.fromRGB(255, 40, 40);
+local BgColor = Color3.fromRGB(10, 10, 15);
+local TabBgColor = Color3.fromRGB(18, 18, 25);
+local ElementColor = Color3.fromRGB(28, 28, 38);
+local TextColor = Color3.fromRGB(240, 240, 240);
+local Fly = false;
+local FlySpeed = 150;
+local Godmode = false;
+local Noclip = false;
+local PreviousNoclipState = false;
+local InfiniteJump = false;
+local Invisible = false;
+local ClickTP = false;
+local BlackToolEnabled = false;
+local ESPEnabled = false;
+local FullbrightEnabled = false;
+local AimbotEnabled = false;
+local AimbotTargetPart = "Head";
+local WallCheckEnabled = true;
+local FOVCircleEnabled = true;
+local AimbotFOVRadius = 120;
+local AimbotSmoothness = 0.25;
+local AimbotAutoShoot = false;
+local AimbotPrediction = 0.165;
+local HitboxExpEnabled = false;
+local HitboxSizeVal = 5;
+local XRayEnabled = false;
+local WalkSpeedVal = 50;
+local FOVVal = 70;
+local NoFallDamage = false;
+local AntiAFK = false;
+local SpeedBoost = false;
+local SpeedBoostMultiplier = 2;
+local AutoFarm = false;
+local SpinBotEnabled = false;
+local KillAuraEnabled = false;
+local KillAuraRange = 15;
+local FixLagEnabled = false;
+local ShowFPS = false;
+local FlyBodyVelocity = nil;
+local FlyBodyGyro = nil;
+local FlyUpInput = false;
+local FlyDownInput = false;
+for _, v in pairs(CoreGui:GetChildren()) do
+	if (v.Name:find("BlackZ_") or v.Name:find("SuperHub_")) then
+		v:Destroy();
+	end
+end
+local function SafeNotify(Title, Text, Duration)
+	local FlatIdent_1743D = 0;
+	while true do
+		if (FlatIdent_1743D == 0) then
+			Duration = Duration or 3;
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {Title=Title,Text=Text,Duration=Duration});
+			end);
+			break;
+		end
+	end
+end
+SafeNotify("BlackZ Hub v14.0", "Đang tải...", 2);
+local function RandomDelay(min, max)
+	return math.random(min * 100, max * 100) / 100;
+end
+local oldWalkSpeed = 16;
+local function SafeSetWalkSpeed(speed)
+	if (speed ~= oldWalkSpeed) then
+		local FlatIdent_7366E = 0;
+		while true do
+			if (FlatIdent_7366E == 1) then
+				if Hum then
+					Hum.WalkSpeed = speed;
+				end
+				break;
+			end
+			if (0 == FlatIdent_7366E) then
+				oldWalkSpeed = speed;
+				task.wait(RandomDelay(0.1, 0.3));
+				FlatIdent_7366E = 1;
+			end
+		end
+	end
+end
+local ScreenGui = Instance.new("ScreenGui");
+ScreenGui.Name = "BlackZ_NevaStyle";
+ScreenGui.ResetOnSpawn = false;
+ScreenGui.Parent = CoreGui;
+local FPSGui = Instance.new("ScreenGui");
+FPSGui.Name = "BlackZ_FPSCounter";
+FPSGui.ResetOnSpawn = false;
+FPSGui.Parent = CoreGui;
+FPSGui.Enabled = false;
+local FPSLabel = Instance.new("TextLabel", FPSGui);
+FPSLabel.Size = UDim2.new(0, 100, 0, 30);
+FPSLabel.Position = UDim2.new(1, -110, 0, 10);
+FPSLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 20);
+FPSLabel.BackgroundTransparency = 0.3;
+FPSLabel.Text = "FPS: 0";
+FPSLabel.TextColor3 = Color3.fromRGB(0, 255, 100);
+FPSLabel.TextSize = 14;
+FPSLabel.Font = Enum.Font.GothamBold;
+FPSLabel.BorderSizePixel = 0;
+Instance.new("UICorner", FPSLabel).CornerRadius = UDim.new(0, 6);
+local FPSStroke = Instance.new("UIStroke", FPSLabel);
+FPSStroke.Color = ThemeColor;
+FPSStroke.Thickness = 1.5;
+local frameCount = 0;
+local lastTime = tick();
+RunService.RenderStepped:Connect(function()
+	if not ShowFPS then
+		return;
+	end
+	frameCount = frameCount + 1;
+	local currentTime = tick();
+	if ((currentTime - lastTime) >= 1) then
+		FPSLabel.Text = "FPS: " .. frameCount;
+		frameCount = 0;
+		lastTime = currentTime;
+	end
+end);
+local FOVGui = Instance.new("ScreenGui");
+FOVGui.Name = "BlackZ_FOVCircle";
+FOVGui.ResetOnSpawn = false;
+FOVGui.Parent = CoreGui;
+local FOVFrame = Instance.new("Frame", FOVGui);
+FOVFrame.Size = UDim2.new(0, AimbotFOVRadius * 2, 0, AimbotFOVRadius * 2);
+FOVFrame.Position = UDim2.new(0.5, -AimbotFOVRadius, 0.5, -AimbotFOVRadius);
+FOVFrame.BackgroundTransparency = 1;
+FOVFrame.Visible = false;
+local FOVStroke = Instance.new("UIStroke", FOVFrame);
+FOVStroke.Color = ThemeColor;
+FOVStroke.Thickness = 2;
+Instance.new("UICorner", FOVFrame).CornerRadius = UDim.new(1, 0);
+local function MakeDraggable(topbar, object)
+	local FlatIdent_7DD24 = 0;
+	local dragging;
+	local dragStart;
+	local startPos;
+	while true do
+		if (FlatIdent_7DD24 == 1) then
+			topbar.InputBegan:Connect(function(input)
+				if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
+					dragging = true;
+					dragStart = input.Position;
+					startPos = object.Position;
+				end
+			end);
+			topbar.InputEnded:Connect(function(input)
+				if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
+					dragging = false;
+				end
+			end);
+			FlatIdent_7DD24 = 2;
+		end
+		if (FlatIdent_7DD24 == 2) then
+			UserInputService.InputChanged:Connect(function(input)
+				if (dragging and ((input.UserInputType == Enum.UserInputType.MouseMovement) or (input.UserInputType == Enum.UserInputType.Touch))) then
+					local FlatIdent_A36C = 0;
+					local delta;
+					while true do
+						if (FlatIdent_A36C == 0) then
+							delta = input.Position - dragStart;
+							object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y);
+							break;
+						end
+					end
+				end
+			end);
+			break;
+		end
+		if (FlatIdent_7DD24 == 0) then
+			dragging = false;
+			dragStart, startPos = nil;
+			FlatIdent_7DD24 = 1;
+		end
+	end
+end
+local OpenBtn = Instance.new("ImageButton", ScreenGui);
+OpenBtn.Size = UDim2.new(0, 45, 0, 45);
+OpenBtn.Position = UDim2.new(0, 15, 0, 150);
+OpenBtn.BackgroundColor3 = BgColor;
+OpenBtn.Active = true;
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0);
+local OpenStroke = Instance.new("UIStroke", OpenBtn);
+OpenStroke.Color = ThemeColor;
+OpenStroke.Thickness = 2;
+local OpenText = Instance.new("TextLabel", OpenBtn);
+OpenText.Size = UDim2.new(1, 0, 1, 0);
+OpenText.BackgroundTransparency = 1;
+OpenText.Text = "BZ";
+OpenText.TextColor3 = ThemeColor;
+OpenText.TextSize = 16;
+OpenText.Font = Enum.Font.GothamBold;
+MakeDraggable(OpenBtn, OpenBtn);
+local MainFrame = Instance.new("Frame", ScreenGui);
+MainFrame.Size = UDim2.new(0, 340, 0, 300);
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -150);
+MainFrame.BackgroundColor3 = BgColor;
+MainFrame.BorderSizePixel = 0;
+MainFrame.Active = true;
+MainFrame.Visible = false;
+MainFrame.ClipsDescendants = true;
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10);
+local MainStroke = Instance.new("UIStroke", MainFrame);
+MainStroke.Color = Color3.fromRGB(40, 40, 50);
+MainStroke.Thickness = 1;
+OpenBtn.Activated:Connect(function()
+	local FlatIdent_7F35E = 0;
+	while true do
+		if (FlatIdent_7F35E == 0) then
+			MainFrame.Visible = not MainFrame.Visible;
+			if MainFrame.Visible then
+				local FlatIdent_A9A3 = 0;
+				while true do
+					if (FlatIdent_A9A3 == 0) then
+						MainFrame.Size = UDim2.new(0, 0, 0, 0);
+						TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size=UDim2.new(0, 340, 0, 300)}):Play();
+						break;
+					end
+				end
+			end
+			break;
+		end
+	end
+end);
+local TopBar = Instance.new("Frame", MainFrame);
+TopBar.Size = UDim2.new(1, 0, 0, 30);
+TopBar.BackgroundColor3 = BgColor;
+TopBar.BorderSizePixel = 0;
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10);
+MakeDraggable(TopBar, MainFrame);
+local Title = Instance.new("TextLabel", TopBar);
+Title.Size = UDim2.new(1, -60, 1, 0);
+Title.Position = UDim2.new(0, 12, 0, 0);
+Title.BackgroundTransparency = 1;
+Title.Text = "⚡ BZ HUB v14.0";
+Title.TextColor3 = ThemeColor;
+Title.TextSize = 13;
+Title.Font = Enum.Font.GothamBold;
+Title.TextXAlignment = Enum.TextXAlignment.Left;
+local CloseBtn = Instance.new("TextButton", MainFrame);
+CloseBtn.Size = UDim2.new(0, 24, 0, 24);
+CloseBtn.Position = UDim2.new(1, -28, 0, 4);
+CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40);
+CloseBtn.Text = "✕";
+CloseBtn.TextColor3 = TextColor;
+CloseBtn.TextSize = 12;
+CloseBtn.Font = Enum.Font.GothamBold;
+CloseBtn.BorderSizePixel = 0;
+CloseBtn.AutoButtonColor = false;
+CloseBtn.ZIndex = 10;
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6);
+local CloseStroke = Instance.new("UIStroke", CloseBtn);
+CloseStroke.Color = ThemeColor;
+CloseStroke.Thickness = 1;
+CloseBtn.Activated:Connect(function()
+	local FlatIdent_40CF = 0;
+	while true do
+		if (FlatIdent_40CF == 0) then
+			TweenService:Create(MainFrame, TweenInfo.new(0.1), {Size=UDim2.new(0, 0, 0, 0)}):Play();
+			task.wait(0.1);
+			FlatIdent_40CF = 1;
+		end
+		if (FlatIdent_40CF == 1) then
+			MainFrame.Visible = false;
+			break;
+		end
+	end
+end);
+local SideBar = Instance.new("ScrollingFrame", MainFrame);
+SideBar.Size = UDim2.new(0, 80, 1, -35);
+SideBar.Position = UDim2.new(0, 5, 0, 35);
+SideBar.BackgroundColor3 = TabBgColor;
+SideBar.BorderSizePixel = 0;
+SideBar.ScrollBarThickness = 0;
+Instance.new("UICorner", SideBar).CornerRadius = UDim.new(0, 8);
+local TabListLayout = Instance.new("UIListLayout", SideBar);
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
+TabListLayout.Padding = UDim.new(0, 4);
+TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center;
+local TabPadding = Instance.new("UIPadding", SideBar);
+TabPadding.PaddingTop = UDim.new(0, 5);
+TabPadding.PaddingBottom = UDim.new(0, 5);
+local Tabs = {};
+local function CreateTab(name)
+	local FlatIdent_79536 = 0;
+	local TabBtn;
+	local Content;
+	local ContentList;
+	local ContentPadding;
+	while true do
+		if (FlatIdent_79536 == 0) then
+			TabBtn = Instance.new("TextButton", SideBar);
+			TabBtn.Size = UDim2.new(0.9, 0, 0, 24);
+			TabBtn.BackgroundColor3 = TabBgColor;
+			TabBtn.Text = name;
+			FlatIdent_79536 = 1;
+		end
+		if (FlatIdent_79536 == 6) then
+			TabBtn.Activated:Connect(function()
+				for _, t in pairs(Tabs) do
+					local FlatIdent_39EBF = 0;
+					while true do
+						if (FlatIdent_39EBF == 0) then
+							t.Content.Visible = false;
+							t.Btn.TextColor3 = Color3.fromRGB(150, 150, 150);
+							FlatIdent_39EBF = 1;
+						end
+						if (1 == FlatIdent_39EBF) then
+							t.Btn.BackgroundColor3 = TabBgColor;
+							break;
+						end
+					end
+				end
+				Content.Visible = true;
+				TabBtn.TextColor3 = TextColor;
+				TabBtn.BackgroundColor3 = ThemeColor;
+				local function updateCanvas()
+					local totalHeight = 0;
+					for _, child in ipairs(Content:GetChildren()) do
+						if (child:IsA("Frame") or child:IsA("TextButton")) then
+							totalHeight = totalHeight + child.AbsoluteSize.Y + 4;
+						end
+					end
+					Content.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 8);
+				end
+				updateCanvas();
+				Content.ChildAdded:Connect(updateCanvas);
+				Content.ChildRemoved:Connect(updateCanvas);
+			end);
+			if (#Tabs == 0) then
+				local FlatIdent_494DF = 0;
+				while true do
+					if (FlatIdent_494DF == 0) then
+						Content.Visible = true;
+						TabBtn.TextColor3 = TextColor;
+						FlatIdent_494DF = 1;
+					end
+					if (FlatIdent_494DF == 1) then
+						TabBtn.BackgroundColor3 = ThemeColor;
+						break;
+					end
+				end
+			end
+			table.insert(Tabs, {Btn=TabBtn,Content=Content});
+			return Content;
+		end
+		if (FlatIdent_79536 == 4) then
+			Content.Visible = false;
+			Content.CanvasSize = UDim2.new(0, 0, 0, 0);
+			ContentList = Instance.new("UIListLayout", Content);
+			ContentList.SortOrder = Enum.SortOrder.LayoutOrder;
+			FlatIdent_79536 = 5;
+		end
+		if (FlatIdent_79536 == 5) then
+			ContentList.Padding = UDim.new(0, 4);
+			ContentPadding = Instance.new("UIPadding", Content);
+			ContentPadding.PaddingTop = UDim.new(0, 3);
+			ContentPadding.PaddingRight = UDim.new(0, 4);
+			FlatIdent_79536 = 6;
+		end
+		if (FlatIdent_79536 == 1) then
+			TabBtn.TextColor3 = Color3.fromRGB(150, 150, 150);
+			TabBtn.TextSize = 10;
+			TabBtn.Font = Enum.Font.GothamMedium;
+			TabBtn.AutoButtonColor = false;
+			FlatIdent_79536 = 2;
+		end
+		if (FlatIdent_79536 == 3) then
+			Content.Position = UDim2.new(0, 85, 0, 35);
+			Content.BackgroundTransparency = 1;
+			Content.ScrollBarThickness = 1;
+			Content.ScrollBarImageColor3 = ThemeColor;
+			FlatIdent_79536 = 4;
+		end
+		if (FlatIdent_79536 == 2) then
+			TabBtn.BorderSizePixel = 0;
+			Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6);
+			Content = Instance.new("ScrollingFrame", MainFrame);
+			Content.Size = UDim2.new(1, -95, 1, -40);
+			FlatIdent_79536 = 3;
+		end
+	end
+end
+local function AddToggle(tab, text, callback)
+	local frame = Instance.new("TextButton");
+	frame.Size = UDim2.new(1, 0, 0, 30);
+	frame.BackgroundColor3 = ElementColor;
+	frame.BorderSizePixel = 0;
+	frame.Text = "";
+	frame.AutoButtonColor = false;
+	frame.Active = true;
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6);
+	local stroke = Instance.new("UIStroke", frame);
+	stroke.Color = Color3.fromRGB(80, 80, 100);
+	stroke.Thickness = 1;
+	local label = Instance.new("TextLabel", frame);
+	label.Size = UDim2.new(0.7, 0, 1, 0);
+	label.Position = UDim2.new(0, 8, 0, 0);
+	label.BackgroundTransparency = 1;
+	label.Text = text;
+	label.TextColor3 = TextColor;
+	label.TextSize = 11;
+	label.Font = Enum.Font.GothamMedium;
+	label.TextXAlignment = Enum.TextXAlignment.Left;
+	local switchBg = Instance.new("Frame", frame);
+	switchBg.Size = UDim2.new(0, 28, 0, 16);
+	switchBg.Position = UDim2.new(1, -35, 0.5, -8);
+	switchBg.BackgroundColor3 = Color3.fromRGB(20, 20, 25);
+	switchBg.BorderSizePixel = 0;
+	Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0);
+	local dot = Instance.new("Frame", switchBg);
+	dot.Size = UDim2.new(0, 12, 0, 12);
+	dot.Position = UDim2.new(0, 2, 0.5, -6);
+	dot.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
+	dot.BorderSizePixel = 0;
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0);
+	local state = false;
+	frame.Activated:Connect(function()
+		local FlatIdent_189F0 = 0;
+		while true do
+			if (FlatIdent_189F0 == 0) then
+				state = not state;
+				TweenService:Create(dot, TweenInfo.new(0.2), {Position=((state and UDim2.new(1, -14, 0.5, -6)) or UDim2.new(0, 2, 0.5, -6))}):Play();
+				FlatIdent_189F0 = 1;
+			end
+			if (FlatIdent_189F0 == 1) then
+				TweenService:Create(dot, TweenInfo.new(0.2), {BackgroundColor3=((state and ThemeColor) or Color3.fromRGB(100, 100, 100))}):Play();
+				TweenService:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3=((state and Color3.fromRGB(40, 40, 50)) or Color3.fromRGB(20, 20, 25))}):Play();
+				FlatIdent_189F0 = 2;
+			end
+			if (FlatIdent_189F0 == 2) then
+				callback(state);
+				break;
+			end
+		end
+	end);
+	frame.Parent = tab;
+	return frame;
+end
+local function AddButton(tab, text, callback)
+	local FlatIdent_207CC = 0;
+	local btn;
+	local stroke;
+	while true do
+		if (FlatIdent_207CC == 3) then
+			stroke.Thickness = 1;
+			btn.MouseEnter:Connect(function()
+				TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3=Color3.fromRGB(40, 40, 55)}):Play();
+				stroke.Color = ThemeColor;
+			end);
+			btn.MouseLeave:Connect(function()
+				local FlatIdent_8435E = 0;
+				while true do
+					if (FlatIdent_8435E == 0) then
+						TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3=ElementColor}):Play();
+						stroke.Color = Color3.fromRGB(80, 80, 100);
+						break;
+					end
+				end
+			end);
+			btn.Activated:Connect(function()
+				local FlatIdent_98388 = 0;
+				while true do
+					if (FlatIdent_98388 == 1) then
+						TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3=ElementColor}):Play();
+						callback();
+						break;
+					end
+					if (FlatIdent_98388 == 0) then
+						TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3=ThemeColor}):Play();
+						task.wait(0.1);
+						FlatIdent_98388 = 1;
+					end
+				end
+			end);
+			FlatIdent_207CC = 4;
+		end
+		if (FlatIdent_207CC == 1) then
+			btn.TextColor3 = TextColor;
+			btn.TextSize = 11;
+			btn.Font = Enum.Font.GothamSemibold;
+			btn.AutoButtonColor = false;
+			FlatIdent_207CC = 2;
+		end
+		if (FlatIdent_207CC == 0) then
+			btn = Instance.new("TextButton", tab);
+			btn.Size = UDim2.new(1, 0, 0, 30);
+			btn.BackgroundColor3 = ElementColor;
+			btn.Text = text;
+			FlatIdent_207CC = 1;
+		end
+		if (2 == FlatIdent_207CC) then
+			btn.BorderSizePixel = 0;
+			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6);
+			stroke = Instance.new("UIStroke", btn);
+			stroke.Color = Color3.fromRGB(80, 80, 100);
+			FlatIdent_207CC = 3;
+		end
+		if (FlatIdent_207CC == 4) then
+			return btn;
+		end
+	end
+end
+local function AddSlider(tab, text, min, max, default, callback)
+	local frame = Instance.new("Frame", tab);
+	frame.Size = UDim2.new(1, 0, 0, 40);
+	frame.BackgroundColor3 = ElementColor;
+	frame.BorderSizePixel = 0;
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6);
+	local label = Instance.new("TextLabel", frame);
+	label.Size = UDim2.new(1, -16, 0, 16);
+	label.Position = UDim2.new(0, 8, 0, 3);
+	label.BackgroundTransparency = 1;
+	label.Text = text .. " : " .. default;
+	label.TextColor3 = TextColor;
+	label.TextSize = 11;
+	label.Font = Enum.Font.GothamMedium;
+	label.TextXAlignment = Enum.TextXAlignment.Left;
+	local sliderBg = Instance.new("TextButton", frame);
+	sliderBg.Size = UDim2.new(1, -16, 0, 5);
+	sliderBg.Position = UDim2.new(0, 8, 0, 24);
+	sliderBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20);
+	sliderBg.Text = "";
+	sliderBg.AutoButtonColor = false;
+	sliderBg.BorderSizePixel = 0;
+	Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0);
+	local fill = Instance.new("Frame", sliderBg);
+	fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0);
+	fill.BackgroundColor3 = ThemeColor;
+	fill.BorderSizePixel = 0;
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0);
+	local dragging = false;
+	local function update(input)
+		local FlatIdent_3CF36 = 0;
+		local pos;
+		local val;
+		while true do
+			if (FlatIdent_3CF36 == 1) then
+				val = math.floor(min + ((max - min) * pos));
+				label.Text = text .. " : " .. val;
+				FlatIdent_3CF36 = 2;
+			end
+			if (FlatIdent_3CF36 == 2) then
+				callback(val);
+				break;
+			end
+			if (0 == FlatIdent_3CF36) then
+				pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1);
+				fill.Size = UDim2.new(pos, 0, 1, 0);
+				FlatIdent_3CF36 = 1;
+			end
+		end
+	end
+	sliderBg.InputBegan:Connect(function(input)
+		if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
+			local FlatIdent_75224 = 0;
+			while true do
+				if (FlatIdent_75224 == 0) then
+					dragging = true;
+					update(input);
+					break;
+				end
+			end
+		end
+	end);
+	UserInputService.InputEnded:Connect(function(input)
+		if ((input.UserInputType == Enum.UserInputType.MouseButton1) or (input.UserInputType == Enum.UserInputType.Touch)) then
+			dragging = false;
+		end
+	end);
+	UserInputService.InputChanged:Connect(function(input)
+		if (dragging and ((input.UserInputType == Enum.UserInputType.MouseMovement) or (input.UserInputType == Enum.UserInputType.Touch))) then
+			update(input);
+		end
+	end);
+	return frame;
+end
+local MainTab = CreateTab("Main");
+local CombatTab = CreateTab("Combat");
+local MiscTab = CreateTab("Misc");
+local PlayersTab = CreateTab("Players");
+local ExtraTab = CreateTab("Extra");
+local IYTab = CreateTab("IY");
+local InfoTab = CreateTab("Info");
+local BloxFruitsTab = CreateTab("BloxFruits");
+local GardenTab = CreateTab("Garden");
+local ChopTab = CreateTab("Chop Tree");
+AddToggle(MainTab, "Fly (E/Q)", function(v)
+	local FlatIdent_22216 = 0;
+	while true do
+		if (0 == FlatIdent_22216) then
+			Fly = v;
+			if v then
+				local FlatIdent_DFF4 = 0;
+				while true do
+					if (FlatIdent_DFF4 == 0) then
+						PreviousNoclipState = Noclip;
+						Noclip = true;
+						break;
+					end
+				end
+			else
+				Noclip = PreviousNoclipState;
+			end
+			break;
+		end
+	end
+end);
+AddSlider(MainTab, "Fly Speed", 50, 400, 150, function(v)
+	FlySpeed = v;
+end);
+AddToggle(MainTab, "Infinite Jump", function(v)
+	InfiniteJump = v;
+end);
+AddToggle(MainTab, "Click Teleport", function(v)
+	ClickTP = v;
+end);
+AddSlider(MainTab, "WalkSpeed", 16, 250, 50, function(v)
+	WalkSpeedVal = v;
+end);
+AddSlider(MainTab, "Camera FOV", 70, 120, 70, function(v)
+	FOVVal = v;
+end);
+AddToggle(CombatTab, "Aimbot", function(v)
+	AimbotEnabled = v;
+end);
+AddToggle(CombatTab, "Target = Thân", function(v)
+	AimbotTargetPart = (v and "HumanoidRootPart") or "Head";
+end);
+AddToggle(CombatTab, "WallCheck", function(v)
+	WallCheckEnabled = v;
+end);
+AddSlider(CombatTab, "Smoothness", 1, 10, 4, function(v)
+	AimbotSmoothness = v / 10;
+end);
+AddToggle(CombatTab, "Auto Shoot", function(v)
+	AimbotAutoShoot = v;
+end);
+AddSlider(CombatTab, "Prediction", 0, 1, 0.165, function(v)
+	AimbotPrediction = v;
+end);
+AddToggle(CombatTab, "FOV Circle", function(v)
+	local FlatIdent_7DFA5 = 0;
+	while true do
+		if (FlatIdent_7DFA5 == 0) then
+			FOVCircleEnabled = v;
+			FOVFrame.Visible = v;
+			break;
+		end
+	end
+end);
+AddSlider(CombatTab, "FOV Radius", 50, 350, 120, function(v)
+	AimbotFOVRadius = v;
+	FOVFrame.Size = UDim2.new(0, v * 2, 0, v * 2);
+	FOVFrame.Position = UDim2.new(0.5, -v, 0.5, -v);
+end);
+AddToggle(CombatTab, "Hitbox Extender", function(v)
+	HitboxExpEnabled = v;
+end);
+AddSlider(CombatTab, "Hitbox Size", 2, 15, 5, function(v)
+	HitboxSizeVal = v;
+end);
+AddToggle(CombatTab, "Kill Aura", function(v)
+	KillAuraEnabled = v;
+end);
+AddSlider(CombatTab, "Kill Aura Range", 5, 50, 15, function(v)
+	KillAuraRange = v;
+end);
+AddToggle(MiscTab, "Godmode", function(v)
+	Godmode = v;
+	if (Godmode and Hum) then
+		local FlatIdent_28014 = 0;
+		while true do
+			if (FlatIdent_28014 == 0) then
+				Hum.Health = Hum.MaxHealth;
+				Hum:BreakJoints();
+				break;
+			end
+		end
+	end
+end);
+AddToggle(MiscTab, "Noclip", function(v)
+	Noclip = v;
+end);
+AddToggle(MiscTab, "Invisible", function(v)
+	local FlatIdent_21449 = 0;
+	while true do
+		if (FlatIdent_21449 == 0) then
+			Invisible = v;
+			pcall(applyInvisible);
+			break;
+		end
+	end
+end);
+AddToggle(MiscTab, "Black Tool", function(v)
+	BlackToolEnabled = v;
+end);
+AddButton(MiscTab, "Nhận Black Tool", function()
+	pcall(function()
+		local FlatIdent_67691 = 0;
+		local tool;
+		local handle;
+		while true do
+			if (FlatIdent_67691 == 2) then
+				handle.Parent = tool;
+				tool.Activated:Connect(function()
+					if (Mouse.Target and not Mouse.Target:IsDescendantOf(LP.Character)) then
+						Mouse.Target:Destroy();
+					end
+				end);
+				tool.Parent = LP.Backpack;
+				break;
+			end
+			if (FlatIdent_67691 == 1) then
+				handle.Name = "Handle";
+				handle.Size = Vector3.new(1, 1, 3);
+				handle.Color = ThemeColor;
+				handle.Material = Enum.Material.Neon;
+				FlatIdent_67691 = 2;
+			end
+			if (FlatIdent_67691 == 0) then
+				tool = Instance.new("Tool");
+				tool.Name = "Black Tool";
+				tool.RequiresHandle = true;
+				handle = Instance.new("Part");
+				FlatIdent_67691 = 1;
+			end
+		end
+	end);
+end);
+AddToggle(MiscTab, "X-Ray", function(v)
+	XRayEnabled = v;
+end);
+AddToggle(MiscTab, "No Fall Damage", function(v)
+	NoFallDamage = v;
+end);
+AddToggle(MiscTab, "Anti AFK", function(v)
+	AntiAFK = v;
+end);
+AddToggle(MiscTab, "Fix Lag", function(v)
+	local FlatIdent_67517 = 0;
+	while true do
+		if (FlatIdent_67517 == 0) then
+			FixLagEnabled = v;
+			pcall(function()
+				if v then
+					local FlatIdent_628E3 = 0;
+					while true do
+						if (FlatIdent_628E3 == 2) then
+							if setfpscap then
+								setfpscap(60);
+							end
+							break;
+						end
+						if (FlatIdent_628E3 == 0) then
+							Lighting.GlobalShadows = false;
+							Lighting.FogEnd = 1000000000;
+							FlatIdent_628E3 = 1;
+						end
+						if (FlatIdent_628E3 == 1) then
+							Lighting.Brightness = 2;
+							for _, obj in pairs(Workspace:GetDescendants()) do
+								if (obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Trail")) then
+									obj.Enabled = false;
+								elseif obj:IsA("Terrain") then
+									local FlatIdent_32BB2 = 0;
+									while true do
+										if (FlatIdent_32BB2 == 0) then
+											obj.WaterWaveSize = 0;
+											obj.WaterWaveSpeed = 0;
+											FlatIdent_32BB2 = 1;
+										end
+										if (FlatIdent_32BB2 == 1) then
+											obj.WaterReflectance = 0;
+											obj.WaterTransparency = 0;
+											break;
+										end
+									end
+								end
+							end
+							FlatIdent_628E3 = 2;
+						end
+					end
+				else
+					local FlatIdent_42BD8 = 0;
+					while true do
+						if (FlatIdent_42BD8 == 1) then
+							for _, obj in pairs(Workspace:GetDescendants()) do
+								if (obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Trail")) then
+									obj.Enabled = true;
+								elseif obj:IsA("Terrain") then
+									obj.WaterWaveSize = 1;
+									obj.WaterWaveSpeed = 10;
+									obj.WaterReflectance = 0.5;
+									obj.WaterTransparency = 0.5;
+								end
+							end
+							if setfpscap then
+								setfpscap(999);
+							end
+							break;
+						end
+						if (FlatIdent_42BD8 == 0) then
+							Lighting.GlobalShadows = true;
+							Lighting.Brightness = 1;
+							FlatIdent_42BD8 = 1;
+						end
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddToggle(MiscTab, "Show FPS", function(v)
+	local FlatIdent_869A9 = 0;
+	while true do
+		if (FlatIdent_869A9 == 0) then
+			ShowFPS = v;
+			FPSGui.Enabled = v;
+			break;
+		end
+	end
+end);
+local PlayersListFrame = Instance.new("ScrollingFrame", PlayersTab);
+PlayersListFrame.Size = UDim2.new(1, 0, 0, 160);
+PlayersListFrame.BackgroundColor3 = ElementColor;
+PlayersListFrame.BorderSizePixel = 0;
+PlayersListFrame.ScrollBarThickness = 1;
+PlayersListFrame.ScrollBarImageColor3 = ThemeColor;
+PlayersListFrame.CanvasSize = UDim2.new(0, 0, 0, 0);
+Instance.new("UICorner", PlayersListFrame).CornerRadius = UDim.new(0, 6);
+local PlayersListLayout = Instance.new("UIListLayout", PlayersListFrame);
+PlayersListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
+PlayersListLayout.Padding = UDim.new(0, 3);
+local PlayersListPadding = Instance.new("UIPadding", PlayersListFrame);
+PlayersListPadding.PaddingTop = UDim.new(0, 3);
+PlayersListPadding.PaddingBottom = UDim.new(0, 3);
+local function UpdatePlayersList()
+	for _, child in pairs(PlayersListFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy();
+		end
+	end
+	for _, player in pairs(Players:GetPlayers()) do
+		if (player ~= LP) then
+			local FlatIdent_912A7 = 0;
+			local row;
+			local nameLabel;
+			local tpBtn;
+			local killBtn;
+			local specBtn;
+			while true do
+				if (FlatIdent_912A7 == 7) then
+					killBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0);
+					killBtn.Text = "K";
+					killBtn.TextColor3 = TextColor;
+					killBtn.TextSize = 9;
+					FlatIdent_912A7 = 8;
+				end
+				if (FlatIdent_912A7 == 1) then
+					Instance.new("UICorner", row).CornerRadius = UDim.new(0, 5);
+					nameLabel = Instance.new("TextLabel", row);
+					nameLabel.Size = UDim2.new(0.35, 0, 1, 0);
+					nameLabel.Position = UDim2.new(0, 4, 0, 0);
+					FlatIdent_912A7 = 2;
+				end
+				if (FlatIdent_912A7 == 0) then
+					row = Instance.new("Frame", PlayersListFrame);
+					row.Size = UDim2.new(1, -6, 0, 40);
+					row.BackgroundColor3 = Color3.fromRGB(20, 20, 25);
+					row.BorderSizePixel = 0;
+					FlatIdent_912A7 = 1;
+				end
+				if (FlatIdent_912A7 == 10) then
+					specBtn.Text = "S";
+					specBtn.TextColor3 = TextColor;
+					specBtn.TextSize = 9;
+					specBtn.Font = Enum.Font.GothamBold;
+					FlatIdent_912A7 = 11;
+				end
+				if (FlatIdent_912A7 == 9) then
+					specBtn = Instance.new("TextButton", row);
+					specBtn.Size = UDim2.new(0, 24, 0, 24);
+					specBtn.Position = UDim2.new(1, -28, 0.5, -12);
+					specBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255);
+					FlatIdent_912A7 = 10;
+				end
+				if (FlatIdent_912A7 == 2) then
+					nameLabel.BackgroundTransparency = 1;
+					nameLabel.Text = player.Name;
+					nameLabel.TextColor3 = TextColor;
+					nameLabel.TextSize = 10;
+					FlatIdent_912A7 = 3;
+				end
+				if (3 == FlatIdent_912A7) then
+					nameLabel.Font = Enum.Font.GothamMedium;
+					nameLabel.TextXAlignment = Enum.TextXAlignment.Left;
+					tpBtn = Instance.new("TextButton", row);
+					tpBtn.Size = UDim2.new(0, 24, 0, 24);
+					FlatIdent_912A7 = 4;
+				end
+				if (FlatIdent_912A7 == 5) then
+					tpBtn.TextSize = 9;
+					tpBtn.Font = Enum.Font.GothamBold;
+					tpBtn.BorderSizePixel = 0;
+					Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 5);
+					FlatIdent_912A7 = 6;
+				end
+				if (8 == FlatIdent_912A7) then
+					killBtn.Font = Enum.Font.GothamBold;
+					killBtn.BorderSizePixel = 0;
+					Instance.new("UICorner", killBtn).CornerRadius = UDim.new(0, 5);
+					killBtn.Activated:Connect(function()
+						if (player.Character and player.Character:FindFirstChild("Humanoid")) then
+							player.Character.Humanoid.Health = 0;
+						end
+					end);
+					FlatIdent_912A7 = 9;
+				end
+				if (FlatIdent_912A7 == 6) then
+					tpBtn.Activated:Connect(function()
+						if (player.Character and player.Character:FindFirstChild("HumanoidRootPart") and HRP) then
+							HRP.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0);
+						end
+					end);
+					killBtn = Instance.new("TextButton", row);
+					killBtn.Size = UDim2.new(0, 24, 0, 24);
+					killBtn.Position = UDim2.new(0.7, 0, 0.5, -12);
+					FlatIdent_912A7 = 7;
+				end
+				if (FlatIdent_912A7 == 4) then
+					tpBtn.Position = UDim2.new(0.4, 0, 0.5, -12);
+					tpBtn.BackgroundColor3 = ThemeColor;
+					tpBtn.Text = "TP";
+					tpBtn.TextColor3 = TextColor;
+					FlatIdent_912A7 = 5;
+				end
+				if (FlatIdent_912A7 == 11) then
+					specBtn.BorderSizePixel = 0;
+					Instance.new("UICorner", specBtn).CornerRadius = UDim.new(0, 5);
+					specBtn.Activated:Connect(function()
+						if (player.Character and player.Character:FindFirstChild("Humanoid")) then
+							Camera.CameraSubject = player.Character.Humanoid;
+						end
+					end);
+					row.Parent = PlayersListFrame;
+					break;
+				end
+			end
+		end
+	end
+	local totalHeight = 0;
+	for _, child in ipairs(PlayersListFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			totalHeight = totalHeight + child.AbsoluteSize.Y + 3;
+		end
+	end
+	PlayersListFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 6);
+end
+UpdatePlayersList();
+Players.PlayerAdded:Connect(function()
+	local FlatIdent_985A2 = 0;
+	while true do
+		if (FlatIdent_985A2 == 0) then
+			task.wait(1);
+			UpdatePlayersList();
+			break;
+		end
+	end
+end);
+Players.PlayerRemoving:Connect(function()
+	local FlatIdent_512FF = 0;
+	while true do
+		if (FlatIdent_512FF == 0) then
+			task.wait(1);
+			UpdatePlayersList();
+			break;
+		end
+	end
+end);
+AddToggle(ExtraTab, "Speed Boost", function(v)
+	SpeedBoost = v;
+end);
+AddSlider(ExtraTab, "Speed Boost x", 1.5, 5, 2, function(v)
+	SpeedBoostMultiplier = v;
+end);
+AddButton(ExtraTab, "Kill All", function()
+	for _, p in pairs(Players:GetPlayers()) do
+		if ((p ~= LP) and p.Character and p.Character:FindFirstChild("Humanoid")) then
+			p.Character.Humanoid.Health = 0;
+		end
+	end
+end);
+AddButton(ExtraTab, "Stun All", function()
+	for _, p in pairs(Players:GetPlayers()) do
+		if ((p ~= LP) and p.Character and p.Character:FindFirstChild("Humanoid")) then
+			local FlatIdent_829F9 = 0;
+			local hum;
+			while true do
+				if (FlatIdent_829F9 == 0) then
+					hum = p.Character.Humanoid;
+					hum.WalkSpeed = 0;
+					FlatIdent_829F9 = 1;
+				end
+				if (1 == FlatIdent_829F9) then
+					hum.JumpPower = 0;
+					task.delay(3, function()
+						if (hum and hum.Parent) then
+							local FlatIdent_3ACCC = 0;
+							while true do
+								if (FlatIdent_3ACCC == 0) then
+									hum.WalkSpeed = 16;
+									hum.JumpPower = 50;
+									break;
+								end
+							end
+						end
+					end);
+					break;
+				end
+			end
+		end
+	end
+end);
+AddButton(ExtraTab, "Freeze All", function()
+	for _, p in pairs(Players:GetPlayers()) do
+		if ((p ~= LP) and p.Character and p.Character:FindFirstChild("HumanoidRootPart")) then
+			local FlatIdent_77478 = 0;
+			while true do
+				if (FlatIdent_77478 == 0) then
+					p.Character.HumanoidRootPart.Anchored = true;
+					task.delay(5, function()
+						if (p.Character and p.Character:FindFirstChild("HumanoidRootPart")) then
+							p.Character.HumanoidRootPart.Anchored = false;
+						end
+					end);
+					break;
+				end
+			end
+		end
+	end
+end);
+AddToggle(ExtraTab, "SpinBot", function(v)
+	SpinBotEnabled = v;
+end);
+AddToggle(ExtraTab, "Auto Farm", function(v)
+	AutoFarm = v;
+	if v then
+		StartAutoFarm();
+	end
+end);
+AddButton(ExtraTab, "Teleport All to Me", function()
+	if HRP then
+		for _, p in pairs(Players:GetPlayers()) do
+			if ((p ~= LP) and p.Character and p.Character:FindFirstChild("HumanoidRootPart")) then
+				p.Character.HumanoidRootPart.CFrame = HRP.CFrame * CFrame.new(0, 0, 5);
+			end
+		end
+	end
+end);
+AddButton(ExtraTab, "Respawn", function()
+	if LP.Character then
+		LP.Character:BreakJoints();
+	end
+end);
+AddButton(ExtraTab, "Explosion", function()
+	if HRP then
+		local exp = Instance.new("Explosion");
+		exp.Position = HRP.Position;
+		exp.BlastRadius = 30;
+		exp.BlastPressure = 1000;
+		exp.Parent = Workspace;
+	end
+end);
+AddToggle(IYTab, "ESP Players", function(v)
+	ESPEnabled = v;
+end);
+AddToggle(IYTab, "Fullbright", function(v)
+	local FlatIdent_7147 = 0;
+	while true do
+		if (FlatIdent_7147 == 0) then
+			FullbrightEnabled = v;
+			Lighting.Brightness = (FullbrightEnabled and 2) or 1;
+			FlatIdent_7147 = 1;
+		end
+		if (FlatIdent_7147 == 1) then
+			Lighting.GlobalShadows = not FullbrightEnabled;
+			break;
+		end
+	end
+end);
+AddButton(IYTab, "Infinite Yield", function()
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))();
+	end);
+end);
+AddButton(IYTab, "Server Hop", function()
+	pcall(function()
+		local FlatIdent_6D884 = 0;
+		local servers;
+		local req;
+		while true do
+			if (0 == FlatIdent_6D884) then
+				servers = {};
+				req = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"));
+				FlatIdent_6D884 = 1;
+			end
+			if (FlatIdent_6D884 == 1) then
+				for _, s in pairs(req.data) do
+					if ((s.playing < s.maxPlayers) and (s.id ~= game.JobId)) then
+						table.insert(servers, s.id);
+					end
+				end
+				if (#servers > 0) then
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LP);
+				end
+				break;
+			end
+		end
+	end);
+end);
+AddButton(IYTab, "Rejoin Server", function()
+	pcall(function()
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP);
+	end);
+end);
+AddButton(InfoTab, "Kênh Youtube", function()
+	SafeNotify("Đăng ký & Follow", "script.blox.fruit07", 5);
+end);
+AddButton(InfoTab, "Copy Discord", function()
+	if setclipboard then
+		setclipboard("https://discord.gg/n4NJ3yaeQ");
+		SafeNotify("Discord Link", "Đã sao chép!", 4);
+	end
+end);
+AddToggle(BloxFruitsTab, "Team Pirates (Bật)", function(v)
+	local FlatIdent_33DE6 = 0;
+	while true do
+		if (0 == FlatIdent_33DE6) then
+			getgenv().team = (v and "Pirates") or "Marines";
+			SafeNotify("Team đã set", getgenv().team, 2);
+			break;
+		end
+	end
+end);
+AddButton(BloxFruitsTab, "🚀 Load BaconHub", function()
+	local FlatIdent_3F15E = 0;
+	while true do
+		if (FlatIdent_3F15E == 0) then
+			SafeNotify("Đang load BaconHub...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_56F59 = 0;
+				while true do
+					if (FlatIdent_56F59 == 0) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua"))();
+						SafeNotify("✅ BaconHub", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(BloxFruitsTab, "🚀 Load GravityHub", function()
+	local FlatIdent_3121 = 0;
+	while true do
+		if (FlatIdent_3121 == 0) then
+			SafeNotify("Đang load GravityHub...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_90A69 = 0;
+				while true do
+					if (FlatIdent_90A69 == 0) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua"))();
+						SafeNotify("✅ GravityHub", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(BloxFruitsTab, "🚀 Load QuantumOnyx", function()
+	SafeNotify("Đang load QuantumOnyx...", "Vui lòng chờ!", 2);
+	pcall(function()
+		local FlatIdent_1BB5D = 0;
+		while true do
+			if (FlatIdent_1BB5D == 0) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))();
+				SafeNotify("✅ QuantumOnyx", "Đã load thành công!", 3);
+				break;
+			end
+		end
+	end);
+end);
+AddButton(BloxFruitsTab, "🚀 Load Banana", function()
+	local FlatIdent_40096 = 0;
+	while true do
+		if (FlatIdent_40096 == 0) then
+			SafeNotify("Đang load Banana...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_622B0 = 0;
+				while true do
+					if (FlatIdent_622B0 == 0) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/bloxfruitsnokey/Banana/refs/heads/main/Banana/script.luau"))();
+						SafeNotify("✅ Banana", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(BloxFruitsTab, "🐉 Load DragonX", function()
+	local FlatIdent_6066D = 0;
+	while true do
+		if (FlatIdent_6066D == 0) then
+			SafeNotify("Đang load DragonX...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_43BF7 = 0;
+				while true do
+					if (0 == FlatIdent_43BF7) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Tdk-Dragon/DragonX.lua/refs/heads/main/DragonX.lua.txt"))();
+						SafeNotify("✅ DragonX", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(BloxFruitsTab, "⚡ Load ALL Scripts", function()
+	local FlatIdent_6E214 = 0;
+	while true do
+		if (FlatIdent_6E214 == 0) then
+			SafeNotify("Đang load tất cả...", "Vui lòng chờ!", 3);
+			pcall(function()
+				local FlatIdent_90E07 = 0;
+				while true do
+					if (FlatIdent_90E07 == 3) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Tdk-Dragon/DragonX.lua/refs/heads/main/DragonX.lua.txt"))();
+						SafeNotify("✅ Đã load xong!", "Tất cả script đã được load.", 4);
+						break;
+					end
+					if (FlatIdent_90E07 == 2) then
+						task.wait(0.5);
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/bloxfruitsnokey/Banana/refs/heads/main/Banana/script.luau"))();
+						task.wait(0.5);
+						FlatIdent_90E07 = 3;
+					end
+					if (0 == FlatIdent_90E07) then
+						getgenv().team = "Pirates";
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua"))();
+						task.wait(0.5);
+						FlatIdent_90E07 = 1;
+					end
+					if (1 == FlatIdent_90E07) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua"))();
+						task.wait(0.5);
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))();
+						FlatIdent_90E07 = 2;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(GardenTab, "🌱 Load Aris Hub (Greedy Garden)", function()
+	SafeNotify("Đang load Aris Hub...", "Vui lòng chờ!", 2);
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/ArisVy/Aris-Hub/refs/heads/main/Gready_garden.lua"))();
+		SafeNotify("✅ Aris Hub", "Đã load thành công!", 3);
+	end);
+end);
+AddButton(GardenTab, "🐍 Load Ouroboros (Greedy Garden)", function()
+	SafeNotify("Đang load Ouroboros...", "Vui lòng chờ!", 2);
+	pcall(function()
+		local FlatIdent_75331 = 0;
+		while true do
+			if (FlatIdent_75331 == 0) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua"))();
+				SafeNotify("✅ Ouroboros", "Đã load thành công!", 3);
+				break;
+			end
+		end
+	end);
+end);
+AddButton(GardenTab, "🌿 Load Haidepzai (Grow A Garden)", function()
+	local FlatIdent_38BFA = 0;
+	while true do
+		if (FlatIdent_38BFA == 0) then
+			SafeNotify("Đang load Haidepzai...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_5BCFC = 0;
+				while true do
+					if (0 == FlatIdent_5BCFC) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/main.lua"))();
+						SafeNotify("✅ Haidepzai", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(GardenTab, "🌳 Load Realkid (Grow A Garden)", function()
+	local FlatIdent_2F298 = 0;
+	while true do
+		if (FlatIdent_2F298 == 0) then
+			SafeNotify("Đang load Realkid...", "Vui lòng chờ!", 2);
+			pcall(function()
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua"))();
+				SafeNotify("✅ Realkid", "Đã load thành công!", 3);
+			end);
+			break;
+		end
+	end
+end);
+AddButton(GardenTab, "⚡ Load ALL Garden Scripts", function()
+	SafeNotify("Đang load tất cả Garden...", "Vui lòng chờ!", 3);
+	pcall(function()
+		local FlatIdent_7D3C9 = 0;
+		while true do
+			if (1 == FlatIdent_7D3C9) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/joustingmatch/Ouroboros/main/loader.lua"))();
+				task.wait(0.5);
+				FlatIdent_7D3C9 = 2;
+			end
+			if (0 == FlatIdent_7D3C9) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/ArisVy/Aris-Hub/refs/heads/main/Gready_garden.lua"))();
+				task.wait(0.5);
+				FlatIdent_7D3C9 = 1;
+			end
+			if (FlatIdent_7D3C9 == 3) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/realkidhub/realkid/refs/heads/main/main.lua"))();
+				SafeNotify("✅ Đã load xong!", "Tất cả Garden script đã được load.", 4);
+				break;
+			end
+			if (FlatIdent_7D3C9 == 2) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/main.lua"))();
+				task.wait(0.5);
+				FlatIdent_7D3C9 = 3;
+			end
+		end
+	end);
+end);
+AddButton(ChopTab, "🌲 Balanced Automation", function()
+	local FlatIdent_4D11E = 0;
+	while true do
+		if (FlatIdent_4D11E == 0) then
+			SafeNotify("Đang load Balanced Automation...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_4F2F2 = 0;
+				while true do
+					if (FlatIdent_4F2F2 == 0) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/BalancedAutomation.lua"))();
+						SafeNotify("✅ Balanced Automation", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(ChopTab, "🪓 Auto Tree Hit", function()
+	local FlatIdent_6B9E2 = 0;
+	while true do
+		if (FlatIdent_6B9E2 == 0) then
+			SafeNotify("Đang load Auto Tree Hit...", "Vui lòng chờ!", 2);
+			pcall(function()
+				local FlatIdent_70003 = 0;
+				while true do
+					if (FlatIdent_70003 == 0) then
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/AutoTreeHit.lua"))();
+						SafeNotify("✅ Auto Tree Hit", "Đã load thành công!", 3);
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+AddButton(ChopTab, "👆 Auto Tap", function()
+	SafeNotify("Đang load Auto Tap...", "Vui lòng chờ!", 2);
+	pcall(function()
+		local FlatIdent_322B4 = 0;
+		while true do
+			if (FlatIdent_322B4 == 0) then
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/AutoTap.lua", true))();
+				SafeNotify("✅ Auto Tap", "Đã load thành công!", 3);
+				break;
+			end
+		end
+	end);
+end);
+AddButton(ChopTab, "⚡ Load ALL Chop Scripts", function()
+	SafeNotify("Đang load tất cả Chop...", "Vui lòng chờ!", 3);
+	pcall(function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/BalancedAutomation.lua"))();
+		task.wait(0.5);
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/AutoTreeHit.lua"))();
+		task.wait(0.5);
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/U-ziii/Chop-Your-Tree/refs/heads/main/AutoTap.lua", true))();
+		SafeNotify("✅ Đã load xong!", "Tất cả Chop script đã được load.", 4);
+	end);
+end);
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	local FlatIdent_9851B = 0;
+	while true do
+		if (FlatIdent_9851B == 0) then
+			if gameProcessed then
+				return;
+			end
+			if (input.KeyCode == Enum.KeyCode.E) then
+				FlyUpInput = true;
+			elseif (input.KeyCode == Enum.KeyCode.Q) then
+				FlyDownInput = true;
+			end
+			break;
+		end
+	end
+end);
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	local FlatIdent_3E44E = 0;
+	while true do
+		if (FlatIdent_3E44E == 0) then
+			if gameProcessed then
+				return;
+			end
+			if (input.KeyCode == Enum.KeyCode.E) then
+				FlyUpInput = false;
+			elseif (input.KeyCode == Enum.KeyCode.Q) then
+				FlyDownInput = false;
+			end
+			break;
+		end
+	end
+end);
+for _, v in pairs(CoreGui:GetChildren()) do
+	if (v.Name == "BlackZ_FlyControls") then
+		v:Destroy();
+	end
+end
+function applyInvisible()
+	pcall(function()
+		local FlatIdent_23521 = 0;
+		while true do
+			if (1 == FlatIdent_23521) then
+				for _, acc in pairs(Char:GetChildren()) do
+					if acc:IsA("Accessory") then
+						local FlatIdent_974E = 0;
+						local handle;
+						while true do
+							if (FlatIdent_974E == 0) then
+								handle = acc:FindFirstChild("Handle");
+								if handle then
+									handle.Transparency = (Invisible and 1) or 0;
+								end
+								FlatIdent_974E = 1;
+							end
+							if (FlatIdent_974E == 1) then
+								for _, part in pairs(acc:GetDescendants()) do
+									if (part:IsA("BasePart") and (part ~= handle)) then
+										part.Transparency = (Invisible and 1) or 0;
+									end
+								end
+								break;
+							end
+						end
+					end
+				end
+				break;
+			end
+			if (FlatIdent_23521 == 0) then
+				if not Char then
+					return;
+				end
+				for _, v in pairs(Char:GetDescendants()) do
+					if v:IsA("BasePart") then
+						v.Transparency = (Invisible and 1) or 0;
+					elseif (v:IsA("Decal") or v:IsA("Texture")) then
+						v.Transparency = (Invisible and 1) or 0;
+					end
+				end
+				FlatIdent_23521 = 1;
+			end
+		end
+	end);
+end
+local ESPContainer = Instance.new("Folder", CoreGui);
+ESPContainer.Name = "BlackZ_ESPContainer";
+local function SetupESP(player)
+	if (player == LP) then
+		return;
+	end
+	local function OnChar(char)
+		local FlatIdent_2C0A2 = 0;
+		local head;
+		while true do
+			if (FlatIdent_2C0A2 == 0) then
+				head = char:FindFirstChild("Head");
+				if head then
+					local FlatIdent_2B986 = 0;
+					local billboard;
+					local textLabel;
+					local hum;
+					while true do
+						if (FlatIdent_2B986 == 3) then
+							textLabel.TextSize = 13;
+							textLabel.Font = Enum.Font.GothamBold;
+							textLabel.TextStrokeTransparency = 0;
+							hum = char:FindFirstChild("Humanoid");
+							FlatIdent_2B986 = 4;
+						end
+						if (FlatIdent_2B986 == 4) then
+							task.spawn(function()
+								while char and char.Parent and hum and (hum.Health > 0) do
+									local FlatIdent_59521 = 0;
+									local dist;
+									while true do
+										if (FlatIdent_59521 == 0) then
+											task.wait(0.5);
+											dist = (HRP and math.floor((HRP.Position - head.Position).Magnitude)) or 0;
+											FlatIdent_59521 = 1;
+										end
+										if (FlatIdent_59521 == 1) then
+											textLabel.Text = player.Name .. "\n[" .. math.floor(hum.Health) .. " HP]  " .. dist .. "m";
+											break;
+										end
+									end
+								end
+							end);
+							break;
+						end
+						if (FlatIdent_2B986 == 2) then
+							textLabel = Instance.new("TextLabel", billboard);
+							textLabel.Size = UDim2.new(1, 0, 1, 0);
+							textLabel.BackgroundTransparency = 1;
+							textLabel.TextColor3 = TextColor;
+							FlatIdent_2B986 = 3;
+						end
+						if (FlatIdent_2B986 == 1) then
+							billboard.StudsOffset = Vector3.new(0, 2.5, 0);
+							billboard.AlwaysOnTop = true;
+							billboard.Enabled = ESPEnabled;
+							billboard.Parent = ESPContainer;
+							FlatIdent_2B986 = 2;
+						end
+						if (FlatIdent_2B986 == 0) then
+							billboard = Instance.new("BillboardGui");
+							billboard.Name = "BZ_Tag";
+							billboard.Adornee = head;
+							billboard.Size = UDim2.new(0, 150, 0, 50);
+							FlatIdent_2B986 = 1;
+						end
+					end
+				end
+				break;
+			end
+		end
+	end
+	if player.Character then
+		task.spawn(function()
+			OnChar(player.Character);
+		end);
+	end
+	player.CharacterAdded:Connect(OnChar);
+end
+for _, p in pairs(Players:GetPlayers()) do
+	SetupESP(p);
+end
+Players.PlayerAdded:Connect(SetupESP);
+local function LoadChar()
+	pcall(function()
+		local FlatIdent_8325F = 0;
+		while true do
+			if (FlatIdent_8325F == 1) then
+				HRP = Char:WaitForChild("HumanoidRootPart", 10);
+				if Hum then
+					local FlatIdent_15C08 = 0;
+					while true do
+						if (FlatIdent_15C08 == 0) then
+							Hum.WalkSpeed = WalkSpeedVal;
+							if NoFallDamage then
+								Hum.UseJumpPower = true;
+							end
+							break;
+						end
+					end
+				end
+				FlatIdent_8325F = 2;
+			end
+			if (FlatIdent_8325F == 0) then
+				Char = LP.Character or LP.CharacterAdded:Wait();
+				Hum = Char:WaitForChild("Humanoid", 10);
+				FlatIdent_8325F = 1;
+			end
+			if (FlatIdent_8325F == 2) then
+				applyInvisible();
+				break;
+			end
+		end
+	end);
+end
+LoadChar();
+LP.CharacterAdded:Connect(LoadChar);
+task.spawn(function()
+	while task.wait(0.15) do
+		pcall(function()
+			if (not Hum or not HRP) then
+				return;
+			end
+			if (Godmode and Hum) then
+				local FlatIdent_C342 = 0;
+				while true do
+					if (1 == FlatIdent_C342) then
+						pcall(function()
+							Hum:BreakJoints();
+						end);
+						break;
+					end
+					if (FlatIdent_C342 == 0) then
+						Hum.Health = Hum.MaxHealth;
+						Hum.MaxHealth = 1000000000;
+						FlatIdent_C342 = 1;
+					end
+				end
+			end
+			if (Noclip and Char) then
+				for _, p in pairs(Char:GetDescendants()) do
+					if p:IsA("BasePart") then
+						p.CanCollide = false;
+					end
+				end
+			elseif (not Noclip and Char) then
+				for _, p in pairs(Char:GetDescendants()) do
+					if p:IsA("BasePart") then
+						p.CanCollide = true;
+					end
+				end
+			end
+			local speed = WalkSpeedVal;
+			if (SpeedBoost and (Hum.MoveDirection.Magnitude > 0)) then
+				speed = speed * SpeedBoostMultiplier;
+			end
+			SafeSetWalkSpeed(speed);
+			Hum.JumpPower = 100;
+			Camera.FieldOfView = FOVVal;
+			if AntiAFK then
+				local FlatIdent_480B4 = 0;
+				while true do
+					if (1 == FlatIdent_480B4) then
+						VirtualInputManager:SendMouseButtonEvent(1, 1, 1, false, game);
+						break;
+					end
+					if (FlatIdent_480B4 == 0) then
+						VirtualInputManager:SendMouseButtonEvent(1, 1, 1, true, game);
+						task.wait(0.01);
+						FlatIdent_480B4 = 1;
+					end
+				end
+			end
+			if (SpinBotEnabled and HRP) then
+				HRP.CFrame = HRP.CFrame * CFrame.Angles(0, math.rad(5), 0);
+			end
+			if HitboxExpEnabled then
+				for _, p in pairs(Players:GetPlayers()) do
+					if ((p ~= LP) and p.Character and p.Character:FindFirstChild("HumanoidRootPart")) then
+						local hrp = p.Character.HumanoidRootPart;
+						hrp.Size = Vector3.new(HitboxSizeVal, HitboxSizeVal, HitboxSizeVal);
+						hrp.Transparency = 1;
+						hrp.CanCollide = false;
+					end
+				end
+			end
+		end);
+	end
+end);
+RunService.Heartbeat:Connect(function(dt)
+	pcall(function()
+		if (Fly and HRP and Hum) then
+			Hum.PlatformStand = true;
+			if not FlyBodyVelocity then
+				FlyBodyVelocity = Instance.new("BodyVelocity");
+				FlyBodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge);
+				FlyBodyVelocity.Velocity = Vector3.zero;
+				FlyBodyVelocity.Parent = HRP;
+			end
+			if not FlyBodyGyro then
+				local FlatIdent_31791 = 0;
+				while true do
+					if (FlatIdent_31791 == 0) then
+						FlyBodyGyro = Instance.new("BodyGyro");
+						FlyBodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge);
+						FlatIdent_31791 = 1;
+					end
+					if (1 == FlatIdent_31791) then
+						FlyBodyGyro.Parent = HRP;
+						break;
+					end
+				end
+			end
+			local moveDir = Hum.MoveDirection;
+			local horizontalMove = Vector3.new(moveDir.X, 0, moveDir.Z);
+			local vertical = 0;
+			if FlyUpInput then
+				vertical = 1;
+			end
+			if FlyDownInput then
+				vertical = -1;
+			end
+			local velocity;
+			if (horizontalMove.Magnitude > 0.1) then
+				velocity = (horizontalMove.Unit * FlySpeed) + Vector3.new(0, vertical * FlySpeed, 0);
+			else
+				velocity = Vector3.new(0, vertical * FlySpeed, 0);
+			end
+			FlyBodyVelocity.Velocity = velocity;
+			FlyBodyGyro.CFrame = Camera.CFrame;
+		elseif (Hum and not Fly) then
+			local FlatIdent_58A9D = 0;
+			while true do
+				if (0 == FlatIdent_58A9D) then
+					Hum.PlatformStand = false;
+					if FlyBodyVelocity then
+						FlyBodyVelocity:Destroy();
+						FlyBodyVelocity = nil;
+					end
+					FlatIdent_58A9D = 1;
+				end
+				if (1 == FlatIdent_58A9D) then
+					if FlyBodyGyro then
+						local FlatIdent_37E3 = 0;
+						while true do
+							if (FlatIdent_37E3 == 0) then
+								FlyBodyGyro:Destroy();
+								FlyBodyGyro = nil;
+								break;
+							end
+						end
+					end
+					break;
+				end
+			end
+		end
+	end);
+end);
+UserInputService.JumpRequest:Connect(function()
+	if (InfiniteJump and Hum) then
+		Hum:ChangeState(Enum.HumanoidStateType.Jumping);
+	end
+end);
+Mouse.Button1Down:Connect(function()
+	pcall(function()
+		if (BlackToolEnabled and Mouse.Target) then
+			if not Mouse.Target:IsDescendantOf(LP.Character) then
+				Mouse.Target:Destroy();
+			end
+		elseif (ClickTP and Mouse.Target and HRP) then
+			HRP.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 3, 0));
+		end
+	end);
+end);
+local function IsVisible(targetPart)
+	local FlatIdent_64E47 = 0;
+	local origin;
+	local direction;
+	local raycastParams;
+	local result;
+	while true do
+		if (FlatIdent_64E47 == 2) then
+			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist;
+			raycastParams.FilterDescendantsInstances = {LP.Character,Camera};
+			FlatIdent_64E47 = 3;
+		end
+		if (FlatIdent_64E47 == 0) then
+			if not WallCheckEnabled then
+				return true;
+			end
+			origin = Camera.CFrame.Position;
+			FlatIdent_64E47 = 1;
+		end
+		if (FlatIdent_64E47 == 3) then
+			result = Workspace:Raycast(origin, direction, raycastParams);
+			if result then
+				local FlatIdent_3EC52 = 0;
+				local hitPart;
+				while true do
+					if (FlatIdent_3EC52 == 0) then
+						hitPart = result.Instance;
+						if hitPart:IsDescendantOf(targetPart.Parent) then
+							return true;
+						end
+						FlatIdent_3EC52 = 1;
+					end
+					if (FlatIdent_3EC52 == 1) then
+						return false;
+					end
+				end
+			end
+			FlatIdent_64E47 = 4;
+		end
+		if (FlatIdent_64E47 == 4) then
+			return true;
+		end
+		if (1 == FlatIdent_64E47) then
+			direction = targetPart.Position - origin;
+			raycastParams = RaycastParams.new();
+			FlatIdent_64E47 = 2;
+		end
+	end
+end
+local function GetPredictedPosition(targetPart, targetVelocity)
+	if (not AimbotPrediction or (AimbotPrediction <= 0)) then
+		return targetPart.Position;
+	end
+	local distance = (targetPart.Position - Camera.CFrame.Position).Magnitude;
+	local timeToTarget = distance / 500;
+	return targetPart.Position + (targetVelocity * timeToTarget * AimbotPrediction);
+end
+local function AutoShoot()
+	if AimbotAutoShoot then
+		local FlatIdent_4D23E = 0;
+		while true do
+			if (1 == FlatIdent_4D23E) then
+				task.wait(0.05);
+				VirtualInputManager:SendMouseButtonEvent(1, 1, 1, false, game);
+				break;
+			end
+			if (FlatIdent_4D23E == 0) then
+				if (LP.Character and LP.Character:FindFirstChildOfClass("Tool")) then
+					local FlatIdent_458D1 = 0;
+					local tool;
+					while true do
+						if (FlatIdent_458D1 == 0) then
+							tool = LP.Character:FindFirstChildOfClass("Tool");
+							if (tool and tool:FindFirstChild("Handle")) then
+								tool:Activate();
+								task.wait(0.1);
+								tool:Deactivate();
+								return;
+							end
+							break;
+						end
+					end
+				end
+				VirtualInputManager:SendMouseButtonEvent(1, 1, 1, true, game);
+				FlatIdent_4D23E = 1;
+			end
+		end
+	end
+end
+local aimbotTimer = 0;
+RunService.Heartbeat:Connect(function()
+	local FlatIdent_21387 = 0;
+	while true do
+		if (FlatIdent_21387 == 0) then
+			aimbotTimer = aimbotTimer + 1;
+			if ((aimbotTimer % 2) ~= 0) then
+				return;
+			end
+			FlatIdent_21387 = 1;
+		end
+		if (FlatIdent_21387 == 1) then
+			pcall(function()
+				local FlatIdent_C758 = 0;
+				local closestTarget;
+				local shortestDist;
+				local screenCenter;
+				while true do
+					if (FlatIdent_C758 == 1) then
+						shortestDist = AimbotFOVRadius;
+						screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2);
+						FlatIdent_C758 = 2;
+					end
+					if (FlatIdent_C758 == 0) then
+						if not AimbotEnabled then
+							return;
+						end
+						closestTarget = nil;
+						FlatIdent_C758 = 1;
+					end
+					if (FlatIdent_C758 == 2) then
+						for _, player in pairs(Players:GetPlayers()) do
+							if ((player ~= LP) and player.Character) then
+								local FlatIdent_1A6E7 = 0;
+								local targetPart;
+								local hum;
+								while true do
+									if (FlatIdent_1A6E7 == 0) then
+										targetPart = player.Character:FindFirstChild(AimbotTargetPart);
+										hum = player.Character:FindFirstChild("Humanoid");
+										FlatIdent_1A6E7 = 1;
+									end
+									if (FlatIdent_1A6E7 == 1) then
+										if (targetPart and hum and (hum.Health > 0) and IsVisible(targetPart)) then
+											local FlatIdent_5D0DC = 0;
+											local pos;
+											local onScreen;
+											while true do
+												if (FlatIdent_5D0DC == 0) then
+													pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position);
+													if onScreen then
+														local FlatIdent_54124 = 0;
+														local magnitude;
+														while true do
+															if (FlatIdent_54124 == 0) then
+																magnitude = (screenCenter - Vector2.new(pos.X, pos.Y)).Magnitude;
+																if (magnitude < shortestDist) then
+																	shortestDist = magnitude;
+																	closestTarget = targetPart;
+																end
+																break;
+															end
+														end
+													end
+													break;
+												end
+											end
+										end
+										break;
+									end
+								end
+							end
+						end
+						if closestTarget then
+							local targetVelocity = closestTarget.Velocity or Vector3.zero;
+							local predictedPos = GetPredictedPosition(closestTarget, targetVelocity);
+							local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos);
+							Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, AimbotSmoothness);
+							AutoShoot();
+						end
+						break;
+					end
+				end
+			end);
+			break;
+		end
+	end
+end);
+task.spawn(function()
+	while task.wait(0.5) do
+		if (KillAuraEnabled and HRP) then
+			pcall(function()
+				for _, player in pairs(Players:GetPlayers()) do
+					if ((player ~= LP) and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart")) then
+						local hrp = player.Character.HumanoidRootPart;
+						if ((hrp.Position - HRP.Position).Magnitude <= KillAuraRange) then
+							player.Character.Humanoid.Health = 0;
+						end
+					end
+				end
+			end);
+		end
+	end
+end);
+function StartAutoFarm()
+	task.spawn(function()
+		while AutoFarm do
+			local FlatIdent_68E5B = 0;
+			while true do
+				if (FlatIdent_68E5B == 0) then
+					task.wait(0.5);
+					pcall(function()
+						if not HRP then
+							return;
+						end
+						local nearest, minDist = nil, math.huge;
+						for _, v in pairs(Workspace:GetDescendants()) do
+							if (v:IsA("Model") and v:FindFirstChild("Humanoid") and (v ~= LP.Character)) then
+								local hum = v:FindFirstChild("Humanoid");
+								if ((hum.Health > 0) and v:FindFirstChild("HumanoidRootPart")) then
+									local dist = (HRP.Position - v.HumanoidRootPart.Position).Magnitude;
+									if (dist < minDist) then
+										local FlatIdent_354BC = 0;
+										while true do
+											if (0 == FlatIdent_354BC) then
+												nearest = v;
+												minDist = dist;
+												break;
+											end
+										end
+									end
+								end
+							end
+						end
+						if (nearest and nearest:FindFirstChild("Humanoid") and (nearest.Humanoid.Health > 0)) then
+							HRP.CFrame = nearest.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0);
+							nearest.Humanoid.Health = 0;
+						end
+					end);
+					break;
+				end
+			end
+		end
+	end);
+end
+task.spawn(function()
+	while task.wait(2) do
+		if XRayEnabled then
+			pcall(function()
+				for _, obj in ipairs(Workspace:GetDescendants()) do
+					if (obj:IsA("BasePart") and not obj:IsDescendantOf(LP.Character)) then
+						local isPlayer = false;
+						for _, p in pairs(Players:GetPlayers()) do
+							if (p.Character and obj:IsDescendantOf(p.Character)) then
+								isPlayer = true;
+							end
+						end
+						if not isPlayer then
+							obj.Transparency = 0.6;
+						end
+					end
+				end
+			end);
+		end
+	end
+end);
+task.spawn(function()
+	while task.wait(0.5) do
+		for _, obj in pairs(ESPContainer:GetChildren()) do
+			if obj:IsA("BillboardGui") then
+				obj.Enabled = ESPEnabled;
+			end
+		end
+	end
+end);
+SafeNotify("BlackZ Hub v14.0", "Đã sửa Godmode + Hitbox, cập nhật Garden!", 5);
