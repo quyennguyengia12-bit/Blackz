@@ -1,1 +1,442 @@
-local _a=game:GetService(string.char(80,108,97,121,101,114,115))local _b=game:GetService(string.char(82,117,110,83,101,114,118,105,99,101))local _c=game:GetService(string.char(87,111,114,107,115,112,97,99,101))local _d=game:GetService(string.char(85,115,101,114,73,110,112,117,116,83,101,114,118,105,99,101))local _e=game:GetService(string.char(76,105,103,104,116,105,110,103))local _f=game:GetService(string.char(67,111,114,101,71,117,105))local _g=game:GetService(string.char(82,101,112,108,105,99,97,116,101,100,83,116,111,114,97,103,101))local _h=_a.LocalPlayer local _i=_h:WaitForChild(string.char(80,108,97,121,101,114,71,117,105))local _j=_c.CurrentCamera local _k,_l,_m local _n=string.char(49,50,51,52,53,54,55,56,57,101)local _o=false local _p=false local _q={FlySpeed=80,WalkSpeed=25,StealDelay=0.8,HatchDelay=1.5,SellInterval=8,UpgradeInterval=10,TreadmillInterval=20,ClaimInterval=15,RebirthInterval=120,AFKInterval=60,MinValueToSteal=0,AutoTP=true,}local _r={AutoSteal=false,AutoHatch=false,AutoSell=false,AutoUpgrade=false,AutoTreadmill=false,AutoClaim=false,AutoPlace=false,AutoRebirth=false,AutoFarmZone=false,SpeedBypass=false,WalkWater=false,RareHunter=false,MutationPriority=false,AutoFuse=false,AutoEquipBest=false,Fly=false,Godmode=false,Noclip=false,InfiniteJump=false,ESPEnabled=false,AntiAFK=false,Fullbright=false,}local function _s()_k=_h.Character or _h.CharacterAdded:Wait()_l=_k:FindFirstChild(string.char(72,117,109,97,110,111,105,100,82,111,111,116,80,97,114,116))_m=_k:FindFirstChild(string.char(72,117,109,97,110,111,105,100))end _s()_h.CharacterAdded:Connect(function()task.wait(1);_s()end)local function _t(_u)local _v=Instance.new(string.char(83,99,114,101,101,110,71,117,105))_v.Name=_u _v.ResetOnSpawn=false _v.IgnoreGuiInset=true _v.DisplayOrder=999 pcall(function()_v.Parent=_f end)if not _v.Parent then _v.Parent=_i end return _v end local _w=nil local _x,_y=false,false local function _z()if not _l then return end if _w then _w:Destroy()end _w=Instance.new(string.char(66,111,100,121,86,101,108,111,99,105,116,121))_w.MaxForce=Vector3.new(1e6,1e6,1e6)_w.P=1e5 _w.Parent=_l end local function _A()if _w then _w:Destroy()_w=nil end end local function _B()if not _r.Fly then _A()if _m then _m.PlatformStand=false;_m.AutoRotate=true end return end if not _l then return end if not _w then _z()end if not _m then return end _m.PlatformStand=true _m.AutoRotate=false local _C=_m.MoveDirection local _D=(_x and 1 or 0)-(_y and 1 or 0)local _E=Vector3.new(_C.X,_D,_C.Z)if _E.Magnitude>0 then _E=_E.Unit*_q.FlySpeed else _E=Vector3.zero end _w.Velocity=_E end _b.Heartbeat:Connect(function()if _r.Fly then _B()end end)local function _F()if _m then if _r.SpeedBypass then _m.WalkSpeed=100 else _m.WalkSpeed=_q.WalkSpeed end end end _b.Heartbeat:Connect(_F)local _H=nil local function _I()if _H then return end _H=_t(string.char(83,69,95,70,108,121))_H.Enabled=false local function _J(_K,_L)local _M=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_H)_M.Size=UDim2.new(0,40,0,40)_M.Position=UDim2.new(1,-50,_L,0)_M.BackgroundColor3=Color3.fromRGB(20,20,25)_M.BackgroundTransparency=0.3 _M.Text=_K _M.TextColor3=Color3.fromRGB(0,255,150)_M.TextSize=20 _M.Font=Enum.Font.GothamBold _M.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_M).CornerRadius=UDim.new(0,10)Instance.new(string.char(85,73,83,116,114,111,107,101),_M).Color=Color3.fromRGB(0,255,150)return _M end local _N=_J(string.char(11014),0.6)local _O=_J(string.char(11015),0.75)_N.InputBegan:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.Touch or _P.UserInputType==Enum.UserInputType.MouseButton1 then _x=true end end)_N.InputEnded:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.Touch or _P.UserInputType==Enum.UserInputType.MouseButton1 then _x=false end end)_O.InputBegan:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.Touch or _P.UserInputType==Enum.UserInputType.MouseButton1 then _y=true end end)_O.InputEnded:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.Touch or _P.UserInputType==Enum.UserInputType.MouseButton1 then _y=false end end)_b.Heartbeat:Connect(function()if _H then _H.Enabled=_r.Fly end end)end local function _Q()if not _o or _p then return end _p=true local _R=_t(string.char(83,69,95,77,101,110,117))local _S=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_R)_S.Size=UDim2.new(0,40,0,40)_S.Position=UDim2.new(0,10,0,120)_S.BackgroundColor3=Color3.fromRGB(15,15,20)_S.BackgroundTransparency=0.2 _S.Text=string.char(55358,56666)_S.TextColor3=Color3.fromRGB(0,255,150)_S.TextSize=20 _S.Font=Enum.Font.GothamBold Instance.new(string.char(85,73,67,111,114,110,101,114),_S).CornerRadius=UDim.new(1,0)Instance.new(string.char(85,73,83,116,114,111,107,101),_S).Color=Color3.fromRGB(0,255,150)local _T=Instance.new(string.char(70,114,97,109,101),_R)_T.Size=UDim2.new(0,260,0,380)_T.Position=UDim2.new(0.5,-130,0.5,-190)_T.BackgroundColor3=Color3.fromRGB(15,15,20)_T.BackgroundTransparency=0.15 _T.BorderSizePixel=0 _T.Visible=false Instance.new(string.char(85,73,67,111,114,110,101,114),_T).CornerRadius=UDim.new(0,12)Instance.new(string.char(85,73,83,116,114,111,107,101),_T).Color=Color3.fromRGB(0,255,150)_T.ClipsDescendants=true local _U=false;local _V,_W _T.InputBegan:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.MouseButton1 or _P.UserInputType==Enum.UserInputType.Touch then _U=true;_V=_P.Position;_W=_T.Position end end)_T.InputEnded:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.MouseButton1 or _P.UserInputType==Enum.UserInputType.Touch then _U=false end end)_d.InputChanged:Connect(function(_P)if _U and(_P.UserInputType==Enum.UserInputType.MouseMovement or _P.UserInputType==Enum.UserInputType.Touch)then local _X=_P.Position-_V _T.Position=UDim2.new(_W.X.Scale,_W.X.Offset+_X.X,_W.Y.Scale,_W.Y.Offset+_X.Y)end end)_S.Activated:Connect(function()_T.Visible=not _T.Visible if _T.Visible then _T:TweenSize(UDim2.new(0,260,0,380),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.3,true)else _T:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.3,true)end end)local _Y=Instance.new(string.char(70,114,97,109,101),_T)_Y.Size=UDim2.new(1,0,0,30);_Y.BackgroundTransparency=1 local _Z=Instance.new(string.char(84,101,120,116,76,97,98,101,108),_Y)_Z.Size=UDim2.new(0.7,0,1,0);_Z.Position=UDim2.new(0,10,0,0)_Z.BackgroundTransparency=1;_Z.Text=string.char(55358,56666,32,83,69,32,85,76,84,73,77,65,84,69,32,118,56,46,51)_Z.TextColor3=Color3.fromRGB(0,255,150);_Z.TextSize=13;_Z.Font=Enum.Font.GothamBold _Z.TextXAlignment=Enum.TextXAlignment.Left local _aa=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_Y)_aa.Size=UDim2.new(0,22,0,22);_aa.Position=UDim2.new(1,-26,0.5,-11)_aa.BackgroundColor3=Color3.fromRGB(200,50,50);_aa.BackgroundTransparency=0.5 _aa.Text=string.char(10005);_aa.TextColor3=Color3.fromRGB(255,255,255)_aa.TextSize=12;_aa.Font=Enum.Font.GothamBold _aa.BorderSizePixel=0;Instance.new(string.char(85,73,67,111,114,110,101,114),_aa).CornerRadius=UDim.new(0,4)_aa.Activated:Connect(function()_T:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,0.3,true);_T.Visible=false end)local _ba=Instance.new(string.char(70,114,97,109,101),_T)_ba.Size=UDim2.new(1,0,0,28);_ba.Position=UDim2.new(0,0,0,30)_ba.BackgroundTransparency=1 local _ca={string.char(9889,65,117,116,111),string.char(55357,56960,77,111,118,101),string.char(55357,57057,65039,77,105,115,99)}local _da=1 local _ea=Instance.new(string.char(83,99,114,111,108,108,105,110,103,70,114,97,109,101),_T)_ea.Size=UDim2.new(1,-8,1,-66);_ea.Position=UDim2.new(0,4,0,62)_ea.BackgroundTransparency=1;_ea.ScrollBarThickness=3 _ea.ScrollBarImageColor3=Color3.fromRGB(0,255,150)_ea.CanvasSize=UDim2.new(0,0,0,0)local _fa=Instance.new(string.char(85,73,76,105,115,116,76,97,121,111,117,116),_ea)_fa.SortOrder=Enum.SortOrder.LayoutOrder;_fa.Padding=UDim.new(0,3)local function _ga(_K,_ha,_ia)local _ja=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_ea)_ja.Size=UDim2.new(1,0,0,26);_ja.BackgroundColor3=Color3.fromRGB(25,25,35)_ja.BackgroundTransparency=0.3;_ja.BorderSizePixel=0;_ja.Text=""_ja.AutoButtonColor=false;Instance.new(string.char(85,73,67,111,114,110,101,114),_ja).CornerRadius=UDim.new(0,6)local _ka=Instance.new(string.char(84,101,120,116,76,97,98,101,108),_ja)_ka.Size=UDim2.new(0.7,0,1,0);_ka.Position=UDim2.new(0,8,0,0)_ka.BackgroundTransparency=1;_ka.Text=_K;_ka.TextColor3=Color3.fromRGB(235,235,235)_ka.TextSize=11;_ka.Font=Enum.Font.GothamMedium;_ka.TextXAlignment=Enum.TextXAlignment.Left local _la=Instance.new(string.char(70,114,97,109,101),_ja)_la.Size=UDim2.new(0,22,0,12);_la.Position=UDim2.new(1,-26,0.5,-6)_la.BackgroundColor3=Color3.fromRGB(40,40,50);_la.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_la).CornerRadius=UDim.new(1,0)local _ma=Instance.new(string.char(70,114,97,109,101),_la)_ma.Size=UDim2.new(0,8,0,8);_ma.Position=UDim2.new(0,2,0.5,-4)_ma.BackgroundColor3=Color3.fromRGB(100,100,100);_ma.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_ma).CornerRadius=UDim.new(1,0)local _na=_ha()local function _oa()_ma.Position=_na and UDim2.new(1,-10,0.5,-4)or UDim2.new(0,2,0.5,-4)_ma.BackgroundColor3=_na and Color3.fromRGB(0,255,150)or Color3.fromRGB(100,100,100)_la.BackgroundColor3=_na and Color3.fromRGB(0,80,50)or Color3.fromRGB(40,40,50)end _oa()_ja.Activated:Connect(function()_na=not _na;_ia(_na);_oa()end)return _ja end local function _pa(_K,_qa,_ra,_sa,_ta)local _ja=Instance.new(string.char(70,114,97,109,101),_ea)_ja.Size=UDim2.new(1,0,0,36);_ja.BackgroundColor3=Color3.fromRGB(25,25,35)_ja.BackgroundTransparency=0.3;_ja.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_ja).CornerRadius=UDim.new(0,6)local _ka=Instance.new(string.char(84,101,120,116,76,97,98,101,108),_ja)_ka.Size=UDim2.new(1,-10,0,14);_ka.Position=UDim2.new(0,8,0,2)_ka.BackgroundTransparency=1;_ka.Text=_K..string.char(58,32).._sa _ka.TextColor3=Color3.fromRGB(235,235,235);_ka.TextSize=10 _ka.Font=Enum.Font.GothamMedium;_ka.TextXAlignment=Enum.TextXAlignment.Left local _ua=Instance.new(string.char(70,114,97,109,101),_ja)_ua.Size=UDim2.new(1,-16,0,5);_ua.Position=UDim2.new(0,8,0,22)_ua.BackgroundColor3=Color3.fromRGB(15,15,20);_ua.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_ua).CornerRadius=UDim.new(1,0)local _va=Instance.new(string.char(70,114,97,109,101),_ua)local _wa=(_sa-_qa)/(_ra-_qa)_va.Size=UDim2.new(_wa,0,1,0);_va.BackgroundColor3=Color3.fromRGB(0,255,150)_va.BorderSizePixel=0;Instance.new(string.char(85,73,67,111,114,110,101,114),_va).CornerRadius=UDim.new(1,0)local _xa=Instance.new(string.char(70,114,97,109,101),_ua)_xa.Size=UDim2.new(0,10,0,10);_xa.Position=UDim2.new(_wa,-5,0.5,-5)_xa.BackgroundColor3=Color3.fromRGB(255,255,255);_xa.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_xa).CornerRadius=UDim.new(1,0)local _U=false local function _ya(_za)local _Aa=_ua.AbsoluteSize.X if _Aa<=0 then return end local _Ba=math.clamp((_za-_ua.AbsolutePosition.X)/_Aa,0,1)local _Ca=math.floor(_qa+(_ra-_qa)*_Ba)_va.Size=UDim2.new(_Ba,0,1,0);_xa.Position=UDim2.new(_Ba,-5,0.5,-5)_ka.Text=_K..string.char(58,32).._Ca;_ta(_Ca)end _xa.InputBegan:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.MouseButton1 or _P.UserInputType==Enum.UserInputType.Touch then _U=true end end)_ua.InputBegan:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.MouseButton1 or _P.UserInputType==Enum.UserInputType.Touch then _U=true;_ya(_P.Position.X)end end)_d.InputChanged:Connect(function(_P)if _U and(_P.UserInputType==Enum.UserInputType.MouseMovement or _P.UserInputType==Enum.UserInputType.Touch)then _ya(_P.Position.X)end end)_d.InputEnded:Connect(function(_P)if _P.UserInputType==Enum.UserInputType.MouseButton1 or _P.UserInputType==Enum.UserInputType.Touch then _U=false end end)return _ja end local function _Da()for _Ea,_Fa in ipairs(_ea:GetChildren())do if _Fa:IsA(string.char(70,114,97,109,101))or _Fa:IsA(string.char(84,101,120,116,66,117,116,116,111,110))then _Fa:Destroy()end end end local function _Ga()_Da()_ga(string.char(55358,56666,32,65,117,116,111,32,83,116,101,97,108),function()return _r.AutoSteal end,function(_Ha)_r.AutoSteal=_Ha end)_ga(string.char(55357,56355,32,65,117,116,111,32,72,97,116,99,104),function()return _r.AutoHatch end,function(_Ha)_r.AutoHatch=_Ha end)_ga(string.char(55357,56496,32,65,117,116,111,32,83,101,108,108),function()return _r.AutoSell end,function(_Ha)_r.AutoSell=_Ha end)_ga(string.char(11014,65039,32,65,117,116,111,32,85,112,103,114,97,100,101),function()return _r.AutoUpgrade end,function(_Ha)_r.AutoUpgrade=_Ha end)_ga(string.char(55356,57283,32,65,117,116,111,32,84,114,101,97,100,109,105,108,108),function()return _r.AutoTreadmill end,function(_Ha)_r.AutoTreadmill=_Ha end)_ga(string.char(55356,57217,32,65,117,116,111,32,67,108,97,105,109),function()return _r.AutoClaim end,function(_Ha)_r.AutoClaim=_Ha end)_ga(string.char(55357,56550,32,65,117,116,111,32,80,108,97,99,101),function()return _r.AutoPlace end,function(_Ha)_r.AutoPlace=_Ha end)_ga(string.char(55357,56580,32,65,117,116,111,32,82,101,98,105,114,116,104),function()return _r.AutoRebirth end,function(_Ha)_r.AutoRebirth=_Ha end)_ga(string.char(55356,57300,65039,32,65,117,116,111,32,70,97,114,109,32,90,111,110,101),function()return _r.AutoFarmZone end,function(_Ha)_r.AutoFarmZone=_Ha end)_pa(string.char(9201,65039,32,83,116,101,97,108,32,68,101,108,97,121),0.3,5,_q.StealDelay,function(_Ha)_q.StealDelay=_Ha end)_Pa()end local function _Ia()_Da()_ga(string.char(55357,56960,32,70,76,89,32,40,66,7853,116,32,273,7875,32,98,97,121,41),function()return _r.Fly end,function(_Ha)_r.Fly=_Ha if _Ha then _I()_z()print(string.char(55357,57067,32,70,108,121,32,79,78,33,32,68,249,110,103,32,87,65,83,68,32,43,32,11014,65039,11015,65039))else _A()if _m then _m.PlatformStand=false;_m.AutoRotate=true end print(string.char(55357,57068,32,70,108,121,32,79,70,70,33))end end)_pa(string.char(9992,65039,32,70,108,121,32,83,112,101,101,100),20,400,_q.FlySpeed,function(_Ha)_q.FlySpeed=_Ha end)_pa(string.char(55356,57283,32,87,97,108,107,32,83,112,101,101,100),16,300,_q.WalkSpeed,function(_Ha)_q.WalkSpeed=_Ha _F()print(string.char(55357,57014,32,87,97,108,107,32,83,112,101,101,100,32,61,32).._Ha)end)_ga(string.char(55358,56728,32,73,110,102,105,110,105,116,101,32,74,117,109,112),function()return _r.InfiniteJump end,function(_Ha)_r.InfiniteJump=_Ha end)_ga(string.char(55357,56443,32,78,111,99,108,105,112),function()return _r.Noclip end,function(_Ha)_r.Noclip=_Ha end)_ga(string.char(9889,32,83,112,101,101,100,32,66,121,112,97,115,115),function()return _r.SpeedBypass end,function(_Ha)_r.SpeedBypass=_Ha _F()end)_ga(string.char(55356,57098,32,87,97,108,107,32,111,110,32,87,97,116,101,114),function()return _r.WalkWater end,function(_Ha)_r.WalkWater=_Ha end)_ga(string.char(9203,32,65,110,116,105,32,65,70,75),function()return _r.AntiAFK end,function(_Ha)_r.AntiAFK=_Ha end)_Pa()end local function _Ja()_Da()_ga(string.char(55357,57057,65039,32,71,111,100,32,77,111,100,101),function()return _r.Godmode end,function(_Ha)_r.Godmode=_Ha end)_ga(string.char(55357,56385,65039,32,69,83,80),function()return _r.ESPEnabled end,function(_Ha)_r.ESPEnabled=_Ha end)_ga(string.char(55357,56614,32,70,117,108,108,98,114,105,103,104,116),function()return _r.Fullbright end,function(_Ha)_r.Fullbright=_Ha pcall(function()_e.Brightness=_Ha and 2 or 1;_e.GlobalShadows=not _Ha end)end)_ga(string.char(11088,32,82,97,114,101,32,72,117,110,116,101,114),function()return _r.RareHunter end,function(_Ha)_r.RareHunter=_Ha end)_ga(string.char(55358,56812,32,77,117,116,97,116,105,111,110,32,80,114,105,111,114,105,116,121),function()return _r.MutationPriority end,function(_Ha)_r.MutationPriority=_Ha end)_ga(string.char(55357,56622,32,65,117,116,111,32,70,117,115,101),function()return _r.AutoFuse end,function(_Ha)_r.AutoFuse=_Ha end)_ga(string.char(9876,65039,32,65,117,116,111,32,69,113,117,105,112,32,66,101,115,116),function()return _r.AutoEquipBest end,function(_Ha)_r.AutoEquipBest=_Ha end)_ga(string.char(55357,56580,32,65,117,116,111,32,84,80),function()return _q.AutoTP end,function(_Ha)_q.AutoTP=_Ha end)_Pa()end local function _Ka()if _da==1 then _Ga()elseif _da==2 then _Ia()elseif _da==3 then _Ja()end end local _La={}for _Ma,_u in ipairs(_ca)do local _M=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_ba)_M.Size=UDim2.new(1/3,0,1,0);_M.Position=UDim2.new((_Ma-1)/3,0,0,0)_M.BackgroundColor3=_Ma==1 and Color3.fromRGB(0,50,30)or Color3.fromRGB(20,20,25)_M.BackgroundTransparency=0.3 _M.Text=_u;_M.TextColor3=_Ma==1 and Color3.fromRGB(0,255,150)or Color3.fromRGB(180,180,180)_M.TextSize=10;_M.Font=Enum.Font.GothamBold _M.BorderSizePixel=0;_M.AutoButtonColor=false Instance.new(string.char(85,73,67,111,114,110,101,114),_M).CornerRadius=UDim.new(0,4)_M.Activated:Connect(function()_da=_Ma for _Na,_Oa in ipairs(_La)do _Oa.BackgroundColor3=_Na==_Ma and Color3.fromRGB(0,50,30)or Color3.fromRGB(20,20,25)_Oa.TextColor3=_Na==_Ma and Color3.fromRGB(0,255,150)or Color3.fromRGB(180,180,180)end _Ka()end)_La[_Ma]=_M end local function _Pa()local _Qa=0 for _Ea,_Fa in ipairs(_ea:GetChildren())do if _Fa:IsA(string.char(70,114,97,109,101))or _Fa:IsA(string.char(84,101,120,116,66,117,116,116,111,110))then _Qa=_Qa+1 end end _ea.CanvasSize=UDim2.new(0,0,0,_Qa*29+10)end _Ka()print(string.char(9989,32,83,69,32,85,76,84,73,77,65,84,69,32,118,56,46,51,32,108,111,97,100,101,100,33,32,84,97,98,32,77,111,118,101,32,43,32,77,105,115,99,32,273,227,32,115,7917,97,46))end local function _Ra()local _R=_t(string.char(83,69,95,75,101,121))local _T=Instance.new(string.char(70,114,97,109,101),_R)_T.Size=UDim2.new(0,240,0,120)_T.Position=UDim2.new(0.5,-120,0.5,-60)_T.BackgroundColor3=Color3.fromRGB(15,15,20)_T.BackgroundTransparency=0.15 _T.BorderSizePixel=0 Instance.new(string.char(85,73,67,111,114,110,101,114),_T).CornerRadius=UDim.new(0,12)Instance.new(string.char(85,73,83,116,114,111,107,101),_T).Color=Color3.fromRGB(0,255,150)local _Z=Instance.new(string.char(84,101,120,116,76,97,98,101,108),_T)_Z.Size=UDim2.new(1,0,0,28);_Z.BackgroundTransparency=1 _Z.Text=string.char(55357,56593,32,83,69,32,85,76,84,73,77,65,84,69,32,118,56,46,51);_Z.TextColor3=Color3.fromRGB(0,255,150)_Z.TextSize=14;_Z.Font=Enum.Font.GothamBold local _Sa=Instance.new(string.char(84,101,120,116,66,111,120),_T)_Sa.Size=UDim2.new(0.8,0,0,28);_Sa.Position=UDim2.new(0.1,0,0,36)_Sa.BackgroundColor3=Color3.fromRGB(25,25,35);_Sa.TextColor3=Color3.fromRGB(255,255,255)_Sa.TextSize=12;_Sa.Font=Enum.Font.GothamMedium _Sa.PlaceholderText=string.char(78,104,7853,112,32,75,101,121,46,46,46);_Sa.ClearTextOnFocus=false Instance.new(string.char(85,73,67,111,114,110,101,114),_Sa).CornerRadius=UDim.new(0,6)local _Ta=Instance.new(string.char(84,101,120,116,66,117,116,116,111,110),_T)_Ta.Size=UDim2.new(0.35,0,0,28);_Ta.Position=UDim2.new(0.325,0,0,78)_Ta.BackgroundColor3=Color3.fromRGB(0,255,150);_Ta.Text=string.char(79,75)_Ta.TextColor3=Color3.fromRGB(10,10,15);_Ta.TextSize=12 _Ta.Font=Enum.Font.GothamBold;Instance.new(string.char(85,73,67,111,114,110,101,114),_Ta).CornerRadius=UDim.new(0,6)local _Ua=Instance.new(string.char(84,101,120,116,76,97,98,101,108),_T)_Ua.Size=UDim2.new(1,0,0,18);_Ua.Position=UDim2.new(0,0,0,108)_Ua.BackgroundTransparency=1;_Ua.Text=""_Ua.TextColor3=Color3.fromRGB(255,50,50);_Ua.TextSize=10 _Ua.Font=Enum.Font.GothamMedium local function _Va()if _Sa.Text==_n then _o=true;_R:Destroy();_Q()else _Ua.Text=string.char(10060,32,83,97,105,32,75,101,121,33,32,78,104,7853,112,58,32).._n _Sa.Text="";_Sa:CaptureFocus()end end _Ta.Activated:Connect(_Va)_Sa.FocusLost:Connect(function(_Wa)if _Wa then _Va()end end)end task.wait(1.5)_Ra()print(string.char(55357,56593,32,83,69,32,85,76,84,73,77,65,84,69,32,118,56,46,51,32,124,32,75,101,121,58,32,49,50,51,52,53,54,55,56,57,101))print(string.char(55357,56524,32,72,432,7899,110,103,32,100,7851,110,58,32,78,104,7845,110,32,55358,56666,32,45,62,32,116,97,98,32,55357,56960,77,111,118,101,32,45,62,32,66,7853,116,32,70,108,121,32,43,32,107,233,111,32,87,97,108,107,32,83,112,101,101,100))
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
+local Camera = Workspace.CurrentCamera
+local Char, HRP, Hum
+local CORRECT_KEY = "123456789e"
+local KeyVerified = false
+local MenuLoaded = false
+local CONFIG = {
+FlySpeed = 80,
+WalkSpeed = 25,
+StealDelay = 0.8,
+HatchDelay = 1.5,
+SellInterval = 8,
+UpgradeInterval = 10,
+TreadmillInterval = 20,
+ClaimInterval = 15,
+RebirthInterval = 120,
+AFKInterval = 60,
+MinValueToSteal = 0,
+AutoTP = true,
+}
+local State = {
+AutoSteal = false,
+AutoHatch = false,
+AutoSell = false,
+AutoUpgrade = false,
+AutoTreadmill = false,
+AutoClaim = false,
+AutoPlace = false,
+AutoRebirth = false,
+AutoFarmZone = false,
+SpeedBypass = false,
+WalkWater = false,
+RareHunter = false,
+MutationPriority = false,
+AutoFuse = false,
+AutoEquipBest = false,
+Fly = false,
+Godmode = false,
+Noclip = false,
+InfiniteJump = false,
+ESPEnabled = false,
+AntiAFK = false,
+Fullbright = false,
+}
+local function GetChar()
+Char = LP.Character or LP.CharacterAdded:Wait()
+HRP = Char:FindFirstChild("HumanoidRootPart")
+Hum = Char:FindFirstChild("Humanoid")
+end
+GetChar()
+LP.CharacterAdded:Connect(function() task.wait(1); GetChar() end)
+local function CreateSafeScreenGui(name)
+local gui = Instance.new("ScreenGui")
+gui.Name = name
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999
+pcall(function() gui.Parent = CoreGui end)
+if not gui.Parent then gui.Parent = PlayerGui end
+return gui
+end
+local FlyBodyVelocity = nil
+local FlyUpInput, FlyDownInput = false, false
+local function createFly()
+if not HRP then return end
+if FlyBodyVelocity then FlyBodyVelocity:Destroy() end
+FlyBodyVelocity = Instance.new("BodyVelocity")
+FlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+FlyBodyVelocity.P = 1e5
+FlyBodyVelocity.Parent = HRP
+end
+local function destroyFly()
+if FlyBodyVelocity then
+FlyBodyVelocity:Destroy()
+FlyBodyVelocity = nil
+end
+end
+local function updateFly()
+if not State.Fly then
+destroyFly()
+if Hum then Hum.PlatformStand = false; Hum.AutoRotate = true end
+return
+end
+if not HRP then return end
+if not FlyBodyVelocity then createFly() end
+if not Hum then return end
+Hum.PlatformStand = true
+Hum.AutoRotate = false
+local moveDir = Hum.MoveDirection
+local vertical = (FlyUpInput and 1 or 0) - (FlyDownInput and 1 or 0)
+local direction = Vector3.new(moveDir.X, vertical, moveDir.Z)
+if direction.Magnitude > 0 then
+direction = direction.Unit * CONFIG.FlySpeed
+else
+direction = Vector3.zero
+end
+FlyBodyVelocity.Velocity = direction
+end
+RunService.Heartbeat:Connect(function()
+if State.Fly then updateFly() end
+end)
+local function updateWalkSpeed()
+if Hum then
+if State.SpeedBypass then
+Hum.WalkSpeed = 100
+else
+Hum.WalkSpeed = CONFIG.WalkSpeed
+end
+end
+end
+RunService.Heartbeat:Connect(updateWalkSpeed)
+local FlyControlsGui = nil
+local function CreateFlyControls()
+if FlyControlsGui then return end
+FlyControlsGui = CreateSafeScreenGui("SE_Fly")
+FlyControlsGui.Enabled = false
+local function makeBtn(text, posY)
+local btn = Instance.new("TextButton", FlyControlsGui)
+btn.Size = UDim2.new(0, 40, 0, 40)
+btn.Position = UDim2.new(1, -50, posY, 0)
+btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+btn.BackgroundTransparency = 0.3
+btn.Text = text
+btn.TextColor3 = Color3.fromRGB(0, 255, 150)
+btn.TextSize = 20
+btn.Font = Enum.Font.GothamBold
+btn.BorderSizePixel = 0
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", btn).Color = Color3.fromRGB(0, 255, 150)
+return btn
+end
+local UpBtn = makeBtn("⬆", 0.6)
+local DownBtn = makeBtn("⬇", 0.75)
+UpBtn.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyUpInput = true end
+end)
+UpBtn.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyUpInput = false end
+end)
+DownBtn.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyDownInput = true end
+end)
+DownBtn.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyDownInput = false end
+end)
+RunService.Heartbeat:Connect(function()
+if FlyControlsGui then FlyControlsGui.Enabled = State.Fly end
+end)
+end
+local function CreateMainMenu()
+if not KeyVerified or MenuLoaded then return end
+MenuLoaded = true
+local ScreenGui = CreateSafeScreenGui("SE_Menu")
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
+ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 120)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+ToggleBtn.BackgroundTransparency = 0.2
+ToggleBtn.Text = "🥚"
+ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+ToggleBtn.TextSize = 20
+ToggleBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(0, 255, 150)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 260, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(0, 255, 150)
+MainFrame.ClipsDescendants = true
+local dragging = false; local dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+end
+end)
+MainFrame.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+UserInputService.InputChanged:Connect(function(input)
+if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+local delta = input.Position - dragStart
+MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+end)
+ToggleBtn.Activated:Connect(function()
+MainFrame.Visible = not MainFrame.Visible
+if MainFrame.Visible then MainFrame:TweenSize(UDim2.new(0, 260, 0, 380), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+else MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true) end
+end)
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size = UDim2.new(1, 0, 0, 30); TitleBar.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel", TitleBar)
+Title.Size = UDim2.new(0.7, 0, 1, 0); Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1; Title.Text = "🥚 SE ULTIMATE v8.3"
+Title.TextColor3 = Color3.fromRGB(0, 255, 150); Title.TextSize = 13; Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+local CloseBtn = Instance.new("TextButton", TitleBar)
+CloseBtn.Size = UDim2.new(0, 22, 0, 22); CloseBtn.Position = UDim2.new(1, -26, 0.5, -11)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); CloseBtn.BackgroundTransparency = 0.5
+CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 12; CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0; Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+CloseBtn.Activated:Connect(function() MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true); MainFrame.Visible = false end)
+local TabBar = Instance.new("Frame", MainFrame)
+TabBar.Size = UDim2.new(1, 0, 0, 28); TabBar.Position = UDim2.new(0, 0, 0, 30)
+TabBar.BackgroundTransparency = 1
+local tabs = {"⚡Auto", "🚀Move", "🛡️Misc"}
+local currentTab = 1
+local Content = Instance.new("ScrollingFrame", MainFrame)
+Content.Size = UDim2.new(1, -8, 1, -66); Content.Position = UDim2.new(0, 4, 0, 62)
+Content.BackgroundTransparency = 1; Content.ScrollBarThickness = 3
+Content.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 150)
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+local ContentList = Instance.new("UIListLayout", Content)
+ContentList.SortOrder = Enum.SortOrder.LayoutOrder; ContentList.Padding = UDim.new(0, 3)
+local function MakeToggle(text, getter, setter)
+local frame = Instance.new("TextButton", Content)
+frame.Size = UDim2.new(1, 0, 0, 26); frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+frame.BackgroundTransparency = 0.3; frame.BorderSizePixel = 0; frame.Text = ""
+frame.AutoButtonColor = false; Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(0.7, 0, 1, 0); label.Position = UDim2.new(0, 8, 0, 0)
+label.BackgroundTransparency = 1; label.Text = text; label.TextColor3 = Color3.fromRGB(235,235,235)
+label.TextSize = 11; label.Font = Enum.Font.GothamMedium; label.TextXAlignment = Enum.TextXAlignment.Left
+local switchBg = Instance.new("Frame", frame)
+switchBg.Size = UDim2.new(0, 22, 0, 12); switchBg.Position = UDim2.new(1, -26, 0.5, -6)
+switchBg.BackgroundColor3 = Color3.fromRGB(40,40,50); switchBg.BorderSizePixel = 0
+Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
+local dot = Instance.new("Frame", switchBg)
+dot.Size = UDim2.new(0, 8, 0, 8); dot.Position = UDim2.new(0, 2, 0.5, -4)
+dot.BackgroundColor3 = Color3.fromRGB(100,100,100); dot.BorderSizePixel = 0
+Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+local state = getter()
+local function updateSwitch()
+dot.Position = state and UDim2.new(1, -10, 0.5, -4) or UDim2.new(0, 2, 0.5, -4)
+dot.BackgroundColor3 = state and Color3.fromRGB(0,255,150) or Color3.fromRGB(100,100,100)
+switchBg.BackgroundColor3 = state and Color3.fromRGB(0,80,50) or Color3.fromRGB(40,40,50)
+end
+updateSwitch()
+frame.Activated:Connect(function() state = not state; setter(state); updateSwitch() end)
+return frame
+end
+local function MakeSlider(text, min, max, default, callback)
+local frame = Instance.new("Frame", Content)
+frame.Size = UDim2.new(1, 0, 0, 36); frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+frame.BackgroundTransparency = 0.3; frame.BorderSizePixel = 0
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1, -10, 0, 14); label.Position = UDim2.new(0, 8, 0, 2)
+label.BackgroundTransparency = 1; label.Text = text .. ": " .. default
+label.TextColor3 = Color3.fromRGB(235,235,235); label.TextSize = 10
+label.Font = Enum.Font.GothamMedium; label.TextXAlignment = Enum.TextXAlignment.Left
+local bg = Instance.new("Frame", frame)
+bg.Size = UDim2.new(1, -16, 0, 5); bg.Position = UDim2.new(0, 8, 0, 22)
+bg.BackgroundColor3 = Color3.fromRGB(15,15,20); bg.BorderSizePixel = 0
+Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
+local fill = Instance.new("Frame", bg)
+local defaultRel = (default - min) / (max - min)
+fill.Size = UDim2.new(defaultRel, 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(0,255,150)
+fill.BorderSizePixel = 0; Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+local thumb = Instance.new("Frame", bg)
+thumb.Size = UDim2.new(0, 10, 0, 10); thumb.Position = UDim2.new(defaultRel, -5, 0.5, -5)
+thumb.BackgroundColor3 = Color3.fromRGB(255,255,255); thumb.BorderSizePixel = 0
+Instance.new("UICorner", thumb).CornerRadius = UDim.new(1, 0)
+local dragging = false
+local function updateSlider(x)
+local bgAbsSize = bg.AbsoluteSize.X
+if bgAbsSize <= 0 then return end
+local relX = math.clamp((x - bg.AbsolutePosition.X) / bgAbsSize, 0, 1)
+local val = math.floor(min + (max - min) * relX)
+fill.Size = UDim2.new(relX, 0, 1, 0); thumb.Position = UDim2.new(relX, -5, 0.5, -5)
+label.Text = text .. ": " .. val; callback(val)
+end
+thumb.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end end)
+bg.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; updateSlider(input.Position.X) end end)
+UserInputService.InputChanged:Connect(function(input) if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then updateSlider(input.Position.X) end end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
+return frame
+end
+local function clearContent()
+for _, child in ipairs(Content:GetChildren()) do
+if child:IsA("Frame") or child:IsA("TextButton") then
+child:Destroy()
+end
+end
+end
+local function buildTab1()
+clearContent()
+MakeToggle("🥚 Auto Steal", function() return State.AutoSteal end, function(v) State.AutoSteal = v end)
+MakeToggle("🐣 Auto Hatch", function() return State.AutoHatch end, function(v) State.AutoHatch = v end)
+MakeToggle("💰 Auto Sell", function() return State.AutoSell end, function(v) State.AutoSell = v end)
+MakeToggle("⬆️ Auto Upgrade", function() return State.AutoUpgrade end, function(v) State.AutoUpgrade = v end)
+MakeToggle("🏃 Auto Treadmill", function() return State.AutoTreadmill end, function(v) State.AutoTreadmill = v end)
+MakeToggle("🎁 Auto Claim", function() return State.AutoClaim end, function(v) State.AutoClaim = v end)
+MakeToggle("📦 Auto Place", function() return State.AutoPlace end, function(v) State.AutoPlace = v end)
+MakeToggle("🔄 Auto Rebirth", function() return State.AutoRebirth end, function(v) State.AutoRebirth = v end)
+MakeToggle("🏔️ Auto Farm Zone", function() return State.AutoFarmZone end, function(v) State.AutoFarmZone = v end)
+MakeSlider("⏱️ Steal Delay", 0.3, 5, CONFIG.StealDelay, function(v) CONFIG.StealDelay = v end)
+updateCanvas()
+end
+local function buildTab2()
+clearContent()
+MakeToggle("🚀 FLY (Bật để bay)", function() return State.Fly end, function(v)
+State.Fly = v
+if v then
+CreateFlyControls()
+createFly()
+print("🛫 Fly ON! Dùng WASD + ⬆️⬇️")
+else
+destroyFly()
+if Hum then Hum.PlatformStand = false; Hum.AutoRotate = true end
+print("🛬 Fly OFF!")
+end
+end)
+MakeSlider("✈️ Fly Speed", 20, 400, CONFIG.FlySpeed, function(v)
+CONFIG.FlySpeed = v
+end)
+MakeSlider("🏃 Walk Speed", 16, 300, CONFIG.WalkSpeed, function(v)
+CONFIG.WalkSpeed = v
+updateWalkSpeed()
+print("🚶 Walk Speed = " .. v)
+end)
+MakeToggle("🦘 Infinite Jump", function() return State.InfiniteJump end, function(v) State.InfiniteJump = v end)
+MakeToggle("👻 Noclip", function() return State.Noclip end, function(v) State.Noclip = v end)
+MakeToggle("⚡ Speed Bypass", function() return State.SpeedBypass end, function(v)
+State.SpeedBypass = v
+updateWalkSpeed()
+end)
+MakeToggle("🌊 Walk on Water", function() return State.WalkWater end, function(v) State.WalkWater = v end)
+MakeToggle("⏳ Anti AFK", function() return State.AntiAFK end, function(v) State.AntiAFK = v end)
+updateCanvas()
+end
+local function buildTab3()
+clearContent()
+MakeToggle("🛡️ God Mode", function() return State.Godmode end, function(v) State.Godmode = v end)
+MakeToggle("👁️ ESP", function() return State.ESPEnabled end, function(v) State.ESPEnabled = v end)
+MakeToggle("🔦 Fullbright", function() return State.Fullbright end, function(v)
+State.Fullbright = v
+pcall(function() Lighting.Brightness = v and 2 or 1; Lighting.GlobalShadows = not v end)
+end)
+MakeToggle("⭐ Rare Hunter", function() return State.RareHunter end, function(v) State.RareHunter = v end)
+MakeToggle("🧬 Mutation Priority", function() return State.MutationPriority end, function(v) State.MutationPriority = v end)
+MakeToggle("🔮 Auto Fuse", function() return State.AutoFuse end, function(v) State.AutoFuse = v end)
+MakeToggle("⚔️ Auto Equip Best", function() return State.AutoEquipBest end, function(v) State.AutoEquipBest = v end)
+MakeToggle("🔄 Auto TP", function() return CONFIG.AutoTP end, function(v) CONFIG.AutoTP = v end)
+updateCanvas()
+end
+local function updateContent()
+if currentTab == 1 then buildTab1()
+elseif currentTab == 2 then buildTab2()
+elseif currentTab == 3 then buildTab3() end
+end
+local tabBtns = {}
+for i, name in ipairs(tabs) do
+local btn = Instance.new("TextButton", TabBar)
+btn.Size = UDim2.new(1/3, 0, 1, 0); btn.Position = UDim2.new((i-1)/3, 0, 0, 0)
+btn.BackgroundColor3 = i==1 and Color3.fromRGB(0,50,30) or Color3.fromRGB(20,20,25)
+btn.BackgroundTransparency = 0.3
+btn.Text = name; btn.TextColor3 = i==1 and Color3.fromRGB(0,255,150) or Color3.fromRGB(180,180,180)
+btn.TextSize = 10; btn.Font = Enum.Font.GothamBold
+btn.BorderSizePixel = 0; btn.AutoButtonColor = false
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+btn.Activated:Connect(function()
+currentTab = i
+for j, b in ipairs(tabBtns) do
+b.BackgroundColor3 = j==i and Color3.fromRGB(0,50,30) or Color3.fromRGB(20,20,25)
+b.TextColor3 = j==i and Color3.fromRGB(0,255,150) or Color3.fromRGB(180,180,180)
+end
+updateContent()
+end)
+tabBtns[i] = btn
+end
+local function updateCanvas()
+local count = 0
+for _, child in ipairs(Content:GetChildren()) do
+if child:IsA("Frame") or child:IsA("TextButton") then
+count = count + 1
+end
+end
+Content.CanvasSize = UDim2.new(0, 0, 0, count * 29 + 10)
+end
+updateContent()
+print("✅ SE ULTIMATE v8.3 loaded! Tab Move + Misc đã sửa.")
+end
+local function CreateKeyGUI()
+local ScreenGui = CreateSafeScreenGui("SE_Key")
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 240, 0, 120)
+MainFrame.Position = UDim2.new(0.5, -120, 0.5, -60)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(0, 255, 150)
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 28); Title.BackgroundTransparency = 1
+Title.Text = "🔑 SE ULTIMATE v8.3"; Title.TextColor3 = Color3.fromRGB(0, 255, 150)
+Title.TextSize = 14; Title.Font = Enum.Font.GothamBold
+local KeyBox = Instance.new("TextBox", MainFrame)
+KeyBox.Size = UDim2.new(0.8, 0, 0, 28); KeyBox.Position = UDim2.new(0.1, 0, 0, 36)
+KeyBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35); KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.TextSize = 12; KeyBox.Font = Enum.Font.GothamMedium
+KeyBox.PlaceholderText = "Nhập Key..."; KeyBox.ClearTextOnFocus = false
+Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 6)
+local SubmitBtn = Instance.new("TextButton", MainFrame)
+SubmitBtn.Size = UDim2.new(0.35, 0, 0, 28); SubmitBtn.Position = UDim2.new(0.325, 0, 0, 78)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 150); SubmitBtn.Text = "OK"
+SubmitBtn.TextColor3 = Color3.fromRGB(10, 10, 15); SubmitBtn.TextSize = 12
+SubmitBtn.Font = Enum.Font.GothamBold; Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 6)
+local ErrorLabel = Instance.new("TextLabel", MainFrame)
+ErrorLabel.Size = UDim2.new(1, 0, 0, 18); ErrorLabel.Position = UDim2.new(0, 0, 0, 108)
+ErrorLabel.BackgroundTransparency = 1; ErrorLabel.Text = ""
+ErrorLabel.TextColor3 = Color3.fromRGB(255, 50, 50); ErrorLabel.TextSize = 10
+ErrorLabel.Font = Enum.Font.GothamMedium
+local function submitKey()
+if KeyBox.Text == CORRECT_KEY then
+KeyVerified = true; ScreenGui:Destroy(); CreateMainMenu()
+else
+ErrorLabel.Text = "❌ Sai Key! Nhập: " .. CORRECT_KEY
+KeyBox.Text = ""; KeyBox:CaptureFocus()
+end
+end
+SubmitBtn.Activated:Connect(submitKey)
+KeyBox.FocusLost:Connect(function(enter) if enter then submitKey() end end)
+end
+task.wait(1.5)
+CreateKeyGUI()
+print("🔑 SE ULTIMATE v8.3 | Key: 123456789e")
+print("📌 Hướng dẫn: Nhấn 🥚 -> tab 🚀Move -> Bật Fly + kéo Walk Speed")
