@@ -1,5 +1,5 @@
 --// =====================================================================
---// STEAL AN EGG ULTIMATE v13.4 | FIX LOADING ORDER
+--// STEAL AN EGG ULTIMATE v14.2 | MENU NHỎ GỌN + FULL FIXED
 --// =====================================================================
 
 -- ===================== SERVICE =====================
@@ -11,6 +11,8 @@ local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
 local LP = Players.LocalPlayer
 local PlayerGui = LP:WaitForChild("PlayerGui")
@@ -26,7 +28,6 @@ local function AntiKickFix()
             end
         end
     end)
-    
     pcall(function()
         LP.PlayerRemoving:Connect(function()
             warn("⚠️ Phát hiện ngắt kết nối, đang cố gắng giữ lại...")
@@ -44,6 +45,7 @@ local FlyBodyVelocity = nil
 local FlyUpInput, FlyDownInput = false, false
 local eggCache = {}
 local facilityCache = {}
+local guardianCache = {}
 local lastUpdate = 0
 local KeyVerified = false
 local MenuLoaded = false
@@ -51,132 +53,145 @@ local lastSafeClick = 0
 local clickCooldown = 0.3
 local lastTeleportTime = 0
 local CORRECT_KEY = "123456789e"
-
--- ===================== HÀM LẤY NHÂN VẬT =====================
-local function GetChar()
-    Char = LP.Character or LP.CharacterAdded:Wait()
-    if Char then
-        HRP = Char:FindFirstChild("HumanoidRootPart")
-        Hum = Char:FindFirstChild("Humanoid")
-    end
-end
-
--- ===================== TẠO GUI =====================
-local function CreateSafeScreenGui(name)
-    local gui = Instance.new("ScreenGui")
-    gui.Name = name
-    gui.ResetOnSpawn = false
-    gui.IgnoreGuiInset = true
-    gui.DisplayOrder = 999
-    gui.Parent = CoreGui
-    if not gui.Parent then gui.Parent = PlayerGui end
-    return gui
-end
+local ESPContainer = nil
+local currentBiome = "Forest"
+local currentSpeed = 0
+local Tabs = {}
 
 -- ===================== DATABASE =====================
+local BIOME_DATA = {
+    ["Forest"] = { speedRequired = 0, guardian = "Chicken", guardianSpeed = 500, displayName = "🌳 Rừng" },
+    ["Lake"] = { speedRequired = 900, guardian = "Swan", guardianSpeed = 1200, displayName = "🏞️ Hồ" },
+    ["Desert"] = { speedRequired = 10000, guardian = "Scorpion", guardianSpeed = 13000, displayName = "🏜️ Sa Mạc" },
+    ["Jungle"] = { speedRequired = 40000, guardian = "Tiger", guardianSpeed = 50000, displayName = "🌴 Rừng Rậm" },
+    ["Snow"] = { speedRequired = 170000, guardian = "Yeti", guardianSpeed = 210000, displayName = "❄️ Tuyết" },
+    ["Volcano"] = { speedRequired = 700000, guardian = "Cerberus", guardianSpeed = 900000, displayName = "🌋 Núi Lửa" },
+    ["Abyss Ocean"] = { speedRequired = 2500000, guardian = "Beluga Whale", guardianSpeed = 3000000, displayName = "🌊 Đại Dương Sâu" },
+    ["Prehistoric"] = { speedRequired = 18000000, guardian = "T-Rex", guardianSpeed = 22000000, displayName = "🦕 Tiền Sử" },
+    ["Cosmic"] = { speedRequired = 700000000, guardian = "Dragon", guardianSpeed = 850000000, displayName = "🌌 Vũ Trụ" },
+    ["Cherry Blossom"] = { speedRequired = 2500000000, guardian = "Kitsune", guardianSpeed = 3000000000, displayName = "🌸 Hoa Anh Đào" },
+    ["Titan Temple"] = { speedRequired = 7000000000, guardian = "Gorilla King", guardianSpeed = 8500000000, displayName = "🏛️ Đền Titan" }
+}
+
 local EGG_DATABASE = {
     -- Forest
-    ["Chicken"] = {value = 1, rarity = "Common", biome = "Forest"},
-    ["Dog"] = {value = 2, rarity = "Common", biome = "Forest"},
-    ["Bird"] = {value = 8, rarity = "Uncommon", biome = "Forest"},
-    ["Owl"] = {value = 35, rarity = "Rare", biome = "Forest"},
-    ["Raccoon"] = {value = 45, rarity = "Rare", biome = "Forest"},
-    ["Fox"] = {value = 180, rarity = "Epic", biome = "Forest"},
-    ["Bear"] = {value = 240, rarity = "Epic", biome = "Forest"},
-    ["Brr Brr Patapim"] = {value = 1800, rarity = "Legendary", biome = "Forest"},
+    ["Chicken"] = { value = 1, rarity = "Common", biome = "Forest", speedRequired = 0 },
+    ["Dog"] = { value = 2, rarity = "Common", biome = "Forest", speedRequired = 0 },
+    ["Bird"] = { value = 8, rarity = "Uncommon", biome = "Forest", speedRequired = 0 },
+    ["Owl"] = { value = 35, rarity = "Rare", biome = "Forest", speedRequired = 0 },
+    ["Raccoon"] = { value = 45, rarity = "Rare", biome = "Forest", speedRequired = 0 },
+    ["Fox"] = { value = 180, rarity = "Epic", biome = "Forest", speedRequired = 0 },
+    ["Bear"] = { value = 240, rarity = "Epic", biome = "Forest", speedRequired = 0 },
+    ["Brr Brr Patapim"] = { value = 1800, rarity = "Legendary", biome = "Forest", speedRequired = 0, isPrize = true },
     -- Lake
-    ["Frog"] = {value = 3, rarity = "Common", biome = "Lake"},
-    ["Duckling"] = {value = 4, rarity = "Common", biome = "Lake"},
-    ["Catfish"] = {value = 12, rarity = "Uncommon", biome = "Lake"},
-    ["Turtle"] = {value = 60, rarity = "Rare", biome = "Lake"},
-    ["Trulimero Trulicina"] = {value = 260, rarity = "Epic", biome = "Lake"},
-    ["Swan"] = {value = 320, rarity = "Epic", biome = "Lake"},
-    ["Axolotl"] = {value = 2800, rarity = "Legendary", biome = "Lake"},
-    ["Leviathan"] = {value = 220000, rarity = "Cosmic", biome = "Lake"},
+    ["Frog"] = { value = 3, rarity = "Common", biome = "Lake", speedRequired = 900 },
+    ["Duckling"] = { value = 4, rarity = "Common", biome = "Lake", speedRequired = 900 },
+    ["Catfish"] = { value = 12, rarity = "Uncommon", biome = "Lake", speedRequired = 900 },
+    ["Turtle"] = { value = 60, rarity = "Rare", biome = "Lake", speedRequired = 900 },
+    ["Trulimero Trulicina"] = { value = 260, rarity = "Epic", biome = "Lake", speedRequired = 900 },
+    ["Swan"] = { value = 320, rarity = "Epic", biome = "Lake", speedRequired = 900 },
+    ["Axolotl"] = { value = 2800, rarity = "Legendary", biome = "Lake", speedRequired = 900 },
+    ["Leviathan"] = { value = 220000, rarity = "Cosmic", biome = "Lake", speedRequired = 900, isPrize = true },
     -- Desert
-    ["Jerboa"] = {value = 6, rarity = "Common", biome = "Desert"},
-    ["Fennec"] = {value = 18, rarity = "Uncommon", biome = "Desert"},
-    ["Camel"] = {value = 75, rarity = "Rare", biome = "Desert"},
-    ["Tob Tobi Tob Tob"] = {value = 325, rarity = "Epic", biome = "Desert"},
-    ["Snake"] = {value = 3600, rarity = "Legendary", biome = "Desert"},
-    ["Sand Spider"] = {value = 16000, rarity = "Mythic", biome = "Desert"},
-    ["Scorpion"] = {value = 18500, rarity = "Mythic", biome = "Desert"},
-    ["Royal Sphinx"] = {value = 280000, rarity = "Cosmic", biome = "Desert"},
+    ["Jerboa"] = { value = 6, rarity = "Common", biome = "Desert", speedRequired = 10000 },
+    ["Fennec"] = { value = 18, rarity = "Uncommon", biome = "Desert", speedRequired = 10000 },
+    ["Camel"] = { value = 75, rarity = "Rare", biome = "Desert", speedRequired = 10000 },
+    ["Tob Tobi Tob Tob"] = { value = 325, rarity = "Epic", biome = "Desert", speedRequired = 10000 },
+    ["Snake"] = { value = 3600, rarity = "Legendary", biome = "Desert", speedRequired = 10000 },
+    ["Sand Spider"] = { value = 16000, rarity = "Mythic", biome = "Desert", speedRequired = 10000 },
+    ["Scorpion"] = { value = 18500, rarity = "Mythic", biome = "Desert", speedRequired = 10000 },
+    ["Royal Sphinx"] = { value = 280000, rarity = "Cosmic", biome = "Desert", speedRequired = 10000, isPrize = true },
     -- Jungle
-    ["Chimpanzee"] = {value = 90, rarity = "Rare", biome = "Jungle"},
-    ["Toucan"] = {value = 110, rarity = "Rare", biome = "Jungle"},
-    ["Crocodile"] = {value = 420, rarity = "Epic", biome = "Jungle"},
-    ["Gorilla"] = {value = 4800, rarity = "Legendary", biome = "Jungle"},
-    ["Orangutini Ananassini"] = {value = 5500, rarity = "Legendary", biome = "Jungle"},
-    ["Spider"] = {value = 22000, rarity = "Mythic", biome = "Jungle"},
-    ["Tiger"] = {value = 28000, rarity = "Mythic", biome = "Jungle"},
-    ["King Snake"] = {value = 3500000, rarity = "Secret", biome = "Jungle"},
+    ["Chimpanzee"] = { value = 90, rarity = "Rare", biome = "Jungle", speedRequired = 40000 },
+    ["Toucan"] = { value = 110, rarity = "Rare", biome = "Jungle", speedRequired = 40000 },
+    ["Crocodile"] = { value = 420, rarity = "Epic", biome = "Jungle", speedRequired = 40000 },
+    ["Gorilla"] = { value = 4800, rarity = "Legendary", biome = "Jungle", speedRequired = 40000 },
+    ["Orangutini Ananassini"] = { value = 5500, rarity = "Legendary", biome = "Jungle", speedRequired = 40000 },
+    ["Spider"] = { value = 22000, rarity = "Mythic", biome = "Jungle", speedRequired = 40000 },
+    ["Tiger"] = { value = 28000, rarity = "Mythic", biome = "Jungle", speedRequired = 40000 },
+    ["King Snake"] = { value = 3500000, rarity = "Secret", biome = "Jungle", speedRequired = 40000, isPrize = true },
     -- Snow
-    ["Penguin"] = {value = 140, rarity = "Rare", biome = "Snow"},
-    ["Walrus"] = {value = 600, rarity = "Epic", biome = "Snow"},
-    ["Polar Bear"] = {value = 7000, rarity = "Legendary", biome = "Snow"},
-    ["Sabertooth Tiger"] = {value = 35000, rarity = "Mythic", biome = "Snow"},
-    ["Mammoth"] = {value = 42000, rarity = "Mythic", biome = "Snow"},
-    ["King Mammoth"] = {value = 400000, rarity = "Cosmic", biome = "Snow"},
-    ["Yeti"] = {value = 8000000, rarity = "Secret", biome = "Snow"},
-    ["Ice Dragon"] = {value = 65000000, rarity = "Eternal", biome = "Snow"},
+    ["Penguin"] = { value = 140, rarity = "Rare", biome = "Snow", speedRequired = 170000 },
+    ["Walrus"] = { value = 600, rarity = "Epic", biome = "Snow", speedRequired = 170000 },
+    ["Polar Bear"] = { value = 7000, rarity = "Legendary", biome = "Snow", speedRequired = 170000 },
+    ["Sabertooth Tiger"] = { value = 35000, rarity = "Mythic", biome = "Snow", speedRequired = 170000 },
+    ["Mammoth"] = { value = 42000, rarity = "Mythic", biome = "Snow", speedRequired = 170000 },
+    ["King Mammoth"] = { value = 400000, rarity = "Cosmic", biome = "Snow", speedRequired = 170000 },
+    ["Yeti"] = { value = 8000000, rarity = "Secret", biome = "Snow", speedRequired = 170000 },
+    ["Ice Dragon"] = { value = 65000000, rarity = "Eternal", biome = "Snow", speedRequired = 170000, isPrize = true },
     -- Volcano
-    ["Lava Gecko"] = {value = 200, rarity = "Rare", biome = "Volcano"},
-    ["Lava Frog"] = {value = 850, rarity = "Epic", biome = "Volcano"},
-    ["Flaming Bull"] = {value = 9500, rarity = "Legendary", biome = "Volcano"},
-    ["Lava Iguana"] = {value = 11000, rarity = "Legendary", biome = "Volcano"},
-    ["Chillin Chilli"] = {value = 55000, rarity = "Mythic", biome = "Volcano"},
-    ["Cerberus"] = {value = 8000000, rarity = "Secret", biome = "Volcano"},
-    ["Phoenix"] = {value = 85000000, rarity = "Eternal", biome = "Volcano"},
-    ["Lava Dragon"] = {value = 100000000, rarity = "Eternal", biome = "Volcano"},
+    ["Lava Gecko"] = { value = 200, rarity = "Rare", biome = "Volcano", speedRequired = 700000 },
+    ["Lava Frog"] = { value = 850, rarity = "Epic", biome = "Volcano", speedRequired = 700000 },
+    ["Flaming Bull"] = { value = 9500, rarity = "Legendary", biome = "Volcano", speedRequired = 700000 },
+    ["Lava Iguana"] = { value = 11000, rarity = "Legendary", biome = "Volcano", speedRequired = 700000 },
+    ["Chillin Chilli"] = { value = 55000, rarity = "Mythic", biome = "Volcano", speedRequired = 700000 },
+    ["Cerberus"] = { value = 8000000, rarity = "Secret", biome = "Volcano", speedRequired = 700000, isPrize = true },
+    ["Phoenix"] = { value = 85000000, rarity = "Eternal", biome = "Volcano", speedRequired = 700000 },
+    ["Lava Dragon"] = { value = 100000000, rarity = "Eternal", biome = "Volcano", speedRequired = 700000, isPrize = true },
     -- Abyss Ocean
-    ["Parrotfish"] = {value = 220, rarity = "Rare", biome = "Abyss Ocean"},
-    ["Swordfish"] = {value = 1100, rarity = "Epic", biome = "Abyss Ocean"},
-    ["Shark"] = {value = 15000, rarity = "Legendary", biome = "Abyss Ocean"},
-    ["Orca"] = {value = 80000, rarity = "Mythic", biome = "Abyss Ocean"},
-    ["Whale Shark"] = {value = 700000, rarity = "Cosmic", biome = "Abyss Ocean"},
-    ["Beluga Whale"] = {value = 850000, rarity = "Cosmic", biome = "Abyss Ocean"},
-    ["Kraken"] = {value = 50000000, rarity = "Eternal", biome = "Abyss Ocean"},
-    ["Mosasaurus"] = {value = 180000000, rarity = "Eternal", biome = "Abyss Ocean"},
+    ["Parrotfish"] = { value = 220, rarity = "Rare", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Swordfish"] = { value = 1100, rarity = "Epic", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Shark"] = { value = 15000, rarity = "Legendary", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Orca"] = { value = 80000, rarity = "Mythic", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Whale Shark"] = { value = 700000, rarity = "Cosmic", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Beluga Whale"] = { value = 850000, rarity = "Cosmic", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Kraken"] = { value = 50000000, rarity = "Eternal", biome = "Abyss Ocean", speedRequired = 2500000 },
+    ["Mosasaurus"] = { value = 180000000, rarity = "Eternal", biome = "Abyss Ocean", speedRequired = 2500000, isPrize = true },
     -- Prehistoric
-    ["Dodo"] = {value = 30000, rarity = "Mythic", biome = "Prehistoric"},
-    ["Pterodactyl"] = {value = 50000, rarity = "Mythic", biome = "Prehistoric"},
-    ["Ankylosaurus"] = {value = 120000, rarity = "Mythic", biome = "Prehistoric"},
-    ["Triceratops"] = {value = 300000, rarity = "Cosmic", biome = "Prehistoric"},
-    ["Bronto"] = {value = 1500000, rarity = "Cosmic", biome = "Prehistoric"},
-    ["Tralaledon"] = {value = 8000000, rarity = "Secret", biome = "Prehistoric"},
-    ["TRex"] = {value = 50000000, rarity = "Eternal", biome = "Prehistoric"},
-    ["Mosasaurus Prehistoric"] = {value = 200000000, rarity = "Eternal", biome = "Prehistoric"},
+    ["Dodo"] = { value = 30000, rarity = "Mythic", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Pterodactyl"] = { value = 50000, rarity = "Mythic", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Ankylosaurus"] = { value = 120000, rarity = "Mythic", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Triceratops"] = { value = 300000, rarity = "Cosmic", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Bronto"] = { value = 1500000, rarity = "Cosmic", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Tralaledon"] = { value = 8000000, rarity = "Secret", biome = "Prehistoric", speedRequired = 18000000 },
+    ["TRex"] = { value = 50000000, rarity = "Eternal", biome = "Prehistoric", speedRequired = 18000000 },
+    ["Mosasaurus Prehistoric"] = { value = 200000000, rarity = "Eternal", biome = "Prehistoric", speedRequired = 18000000, isPrize = true },
     -- Cosmic
-    ["Unicorn"] = {value = 1000000000, rarity = "Divine", biome = "Cosmic"},
-    ["Kitsune"] = {value = 1800000000, rarity = "Divine", biome = "Cosmic"},
-    ["Eternal Lunar Dragon"] = {value = 250000000, rarity = "Eternal", biome = "Cosmic"},
-    ["Cosmic Dragon"] = {value = 100000000, rarity = "Eternal", biome = "Cosmic"},
-    -- Sakura Blossom
-    ["Crane"] = {value = 50000, rarity = "Epic", biome = "Sakura Blossom"},
-    ["Salamander"] = {value = 100000, rarity = "Legendary", biome = "Sakura Blossom"},
-    ["Red Panda"] = {value = 500000, rarity = "Mythic", biome = "Sakura Blossom"},
-    ["Snowy Owl"] = {value = 2000000, rarity = "Cosmic", biome = "Sakura Blossom"},
-    ["Koi"] = {value = 5000000, rarity = "Secret", biome = "Sakura Blossom"},
-    ["Stag"] = {value = 10000000, rarity = "Secret", biome = "Sakura Blossom"},
-    ["Oni Tiger"] = {value = 600000000, rarity = "Eternal", biome = "Sakura Blossom"},
-    ["Kitsune Sakura"] = {value = 2000000000, rarity = "Divine", biome = "Sakura Blossom"},
+    ["Centapede"] = { value = 1000000, rarity = "Cosmic", biome = "Cosmic", speedRequired = 700000000 },
+    ["Cosmic Gecko"] = { value = 5000000, rarity = "Cosmic", biome = "Cosmic", speedRequired = 700000000 },
+    ["Cosmic Gorilla"] = { value = 10000000, rarity = "Cosmic", biome = "Cosmic", speedRequired = 700000000 },
+    ["La Vacca Saturno Saturnita"] = { value = 50000000, rarity = "Secret", biome = "Cosmic", speedRequired = 700000000 },
+    ["Cosmic Dragon"] = { value = 100000000, rarity = "Eternal", biome = "Cosmic", speedRequired = 700000000 },
+    ["Cosmic Skeleton Boss"] = { value = 200000000, rarity = "Eternal", biome = "Cosmic", speedRequired = 700000000 },
+    ["Eternal Lunar Dragon"] = { value = 250000000, rarity = "Eternal", biome = "Cosmic", speedRequired = 700000000, isPrize = true },
+    ["Unicorn"] = { value = 1000000000, rarity = "Divine", biome = "Cosmic", speedRequired = 700000000 },
+    ["Kitsune"] = { value = 1800000000, rarity = "Divine", biome = "Cosmic", speedRequired = 700000000, isPrize = true },
+    -- Cherry Blossom
+    ["Crane"] = { value = 50000, rarity = "Epic", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Salamander"] = { value = 100000, rarity = "Legendary", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Red Panda"] = { value = 500000, rarity = "Mythic", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Snowy Owl"] = { value = 2000000, rarity = "Cosmic", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Koi"] = { value = 5000000, rarity = "Secret", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Stag"] = { value = 10000000, rarity = "Secret", biome = "Cherry Blossom", speedRequired = 2500000000, isPrize = true },
+    ["Oni Tiger"] = { value = 600000000, rarity = "Eternal", biome = "Cherry Blossom", speedRequired = 2500000000 },
+    ["Kitsune Sakura"] = { value = 2000000000, rarity = "Divine", biome = "Cherry Blossom", speedRequired = 2500000000 },
     -- Titan Temple
-    ["Titan Gorilla"] = {value = 150000000, rarity = "Eternal", biome = "Titan Temple"},
-    ["Titan Guardian"] = {value = 250000000, rarity = "Eternal", biome = "Titan Temple"},
-    ["Titan King"] = {value = 500000000, rarity = "Eternal", biome = "Titan Temple"},
-    ["Titan Dragon"] = {value = 1000000000, rarity = "Divine", biome = "Titan Temple"},
+    ["Titan Gorilla"] = { value = 150000000, rarity = "Eternal", biome = "Titan Temple", speedRequired = 7000000000 },
+    ["Titan Guardian"] = { value = 250000000, rarity = "Eternal", biome = "Titan Temple", speedRequired = 7000000000, isPrize = true },
+    ["Titan King"] = { value = 500000000, rarity = "Eternal", biome = "Titan Temple", speedRequired = 7000000000 },
+    ["Titan Dragon"] = { value = 1000000000, rarity = "Divine", biome = "Titan Temple", speedRequired = 7000000000 },
     -- Mutation
-    ["Bloom"] = {value = 5000000, rarity = "Secret", biome = "Mutation"},
-    ["Spirit Bloom"] = {value = 10000000, rarity = "Secret", biome = "Mutation"},
-    ["Cosmic Bloom"] = {value = 50000000, rarity = "Cosmic", biome = "Mutation"},
+    ["Bloom"] = { value = 5000000, rarity = "Secret", biome = "Mutation", speedRequired = 0, isMutation = true },
+    ["Spirit Bloom"] = { value = 10000000, rarity = "Secret", biome = "Mutation", speedRequired = 0, isMutation = true },
+    ["Cosmic Bloom"] = { value = 50000000, rarity = "Cosmic", biome = "Mutation", speedRequired = 0, isMutation = true },
+    ["Golden Mutant"] = { value = 25000000, rarity = "Secret", biome = "Mutation", speedRequired = 0, isMutation = true },
     -- Brainrot
-    ["Brainrot Rare"] = {value = 10000, rarity = "Rare", biome = "Brainrot"},
-    ["Brainrot Epic"] = {value = 40000, rarity = "Epic", biome = "Brainrot"},
-    ["Brainrot Mythic"] = {value = 4000000, rarity = "Mythic", biome = "Brainrot"},
-    ["Brainrot Cosmic"] = {value = 80000000, rarity = "Cosmic", biome = "Brainrot"},
-    ["Brainrot Secret"] = {value = 2000000000, rarity = "Secret", biome = "Brainrot"},
-    ["Brainrot Eternal"] = {value = 11000000000, rarity = "Eternal", biome = "Brainrot"},
+    ["Brainrot Rare"] = { value = 10000, rarity = "Rare", biome = "Brainrot", speedRequired = 0 },
+    ["Brainrot Epic"] = { value = 40000, rarity = "Epic", biome = "Brainrot", speedRequired = 0 },
+    ["Brainrot Mythic"] = { value = 4000000, rarity = "Mythic", biome = "Brainrot", speedRequired = 0 },
+    ["Brainrot Cosmic"] = { value = 80000000, rarity = "Cosmic", biome = "Brainrot", speedRequired = 0 },
+    ["Brainrot Secret"] = { value = 2000000000, rarity = "Secret", biome = "Brainrot", speedRequired = 0 },
+    ["Brainrot Eternal"] = { value = 11000000000, rarity = "Eternal", biome = "Brainrot", speedRequired = 0 },
+}
+
+local FUSE_DATABASE = {
+    ["Common"] = { target = "Uncommon", count = 3 },
+    ["Uncommon"] = { target = "Rare", count = 3 },
+    ["Rare"] = { target = "Epic", count = 3 },
+    ["Epic"] = { target = "Legendary", count = 3 },
+    ["Legendary"] = { target = "Mythic", count = 4 },
+    ["Mythic"] = { target = "Secret", count = 4 },
+    ["Secret"] = { target = "Cosmic", count = 5 }
 }
 
 -- ===================== CẤU HÌNH =====================
@@ -193,37 +208,46 @@ local CONFIG = {
     MinValueToSteal = 0,
     AutoTP = true,
     TPHeightOffset = 5,
-    SelectedBiome = "Forest",
+    SelectedBiome = "Auto",
     MaxClickPerSecond = 2,
+    EnableServerHop = false,
+    MinSpeedRequired = 265,
 }
 
 local State = {
-    AutoSteal = false,
-    AutoHatch = false,
-    AutoSell = false,
-    AutoUpgrade = false,
-    AutoClaim = false,
-    AutoRebirth = false,
-    AutoFarm = false,
-    AutoTreadmill = false,
-    AutoPlace = false,
-    Fly = false,
-    SpeedBypass = false,
-    WalkWater = false,
-    InfiniteJump = false,
-    Noclip = false,
-    AntiAFK = false,
-    RareHunter = false,
-    MutationPriority = false,
-    AutoFuse = false,
-    AutoEquipBest = false,
-    AutoTP = true,
-    Godmode = false,
-    ESP = false,
-    Fullbright = false,
+    AutoSteal = false, AutoHatch = false, AutoSell = false, AutoUpgrade = false,
+    AutoClaim = false, AutoRebirth = false, AutoFarm = false, AutoTreadmill = false,
+    AutoPlace = false, Fly = false, SpeedBypass = false, WalkWater = false,
+    InfiniteJump = false, Noclip = false, AntiAFK = false, RareHunter = false,
+    MutationPriority = false, AutoFuse = false, AutoEquipBest = false, AutoTP = true,
+    Godmode = false, ESP = false, Fullbright = false, GuardianFreeze = false,
+    EnableGuardianAvoid = true, SizeHunter = false, NightHunter = false,
+    BeeGunUnlock = false, BatKnockback = false, WallDropGlitch = false,
+    BossFlipGlitch = false, ServerHopForSize = false
 }
 
 -- ===================== HÀM TIỆN ÍCH =====================
+local function GetChar()
+    Char = LP.Character or LP.CharacterAdded:Wait()
+    if Char then
+        HRP = Char:FindFirstChild("HumanoidRootPart")
+        Hum = Char:FindFirstChild("Humanoid")
+    end
+end
+GetChar()
+LP.CharacterAdded:Connect(function() task.wait(1); GetChar() end)
+
+local function CreateSafeScreenGui(name)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = name
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    gui.DisplayOrder = 999
+    gui.Parent = CoreGui
+    if not gui.Parent then gui.Parent = PlayerGui end
+    return gui
+end
+
 local function getEggName(egg)
     if egg:GetAttribute("Type") then return tostring(egg:GetAttribute("Type")) end
     if egg:GetAttribute("Name") then return tostring(egg:GetAttribute("Name")) end
@@ -238,9 +262,16 @@ local function isValidEgg(egg)
     return true
 end
 
-local function getEggValue(egg)
-    local name = getEggName(egg)
-    return EGG_DATABASE[name] and EGG_DATABASE[name].value or 0
+local function getPlayerSpeed()
+    if Hum then return Hum.WalkSpeed end
+    return 0
+end
+
+local function detectMutation(egg)
+    local name = egg.Name:lower()
+    if name:find("bloom") or name:find("spirit") or name:find("cosmic") or name:find("golden") then return true end
+    if egg:GetAttribute("Mutation") or egg:GetAttribute("Bloom") then return true end
+    return false
 end
 
 local clickCount = 0
@@ -264,7 +295,6 @@ local function safeClick(obj)
     local now = tick()
     if now - lastSafeClick < clickCooldown then return end
     lastSafeClick = now
-    
     pcall(function()
         local cd = obj:FindFirstChildWhichIsA("ClickDetector")
         if cd then
@@ -276,6 +306,11 @@ local function safeClick(obj)
                 if fireclickdetector then fireclickdetector(child) else child:Click() end
                 return
             end
+        end
+        local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt")
+        if prompt then
+            if fireproximityprompt then fireproximityprompt(prompt) else prompt:InputHoldBegin() task.wait(0.1) prompt:InputHoldEnd() end
+            return
         end
     end)
 end
@@ -289,35 +324,47 @@ local function teleportTo(pos)
     HRP.CFrame = CFrame.new(pos + Vector3.new(0, CONFIG.TPHeightOffset, 0))
 end
 
+local function getBestBiome()
+    local speed = getPlayerSpeed()
+    local best = "Forest"
+    for biome, data in pairs(BIOME_DATA) do
+        if speed >= data.speedRequired then
+            best = biome
+        end
+    end
+    return best
+end
+
 -- ===================== CACHE =====================
 local function updateCaches()
     if tick() - lastUpdate < 5 then return end
     lastUpdate = tick()
-    
     eggCache = {}
     facilityCache = {}
-    
+    guardianCache = {}
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("BasePart") or obj:IsA("Model") then
             local nameLower = obj.Name:lower()
             if (nameLower:find("egg") or obj:GetAttribute("Egg")) and isValidEgg(obj) then
                 table.insert(eggCache, obj)
+            elseif nameLower:find("guardian") or obj:GetAttribute("Guardian") then
+                table.insert(guardianCache, obj)
             elseif nameLower:find("sell") then
-                table.insert(facilityCache, {obj = obj, type = "sell"})
+                table.insert(facilityCache, { obj = obj, type = "sell" })
             elseif nameLower:find("hatch") or nameLower:find("nest") or nameLower:find("incubator") then
-                table.insert(facilityCache, {obj = obj, type = "hatch"})
+                table.insert(facilityCache, { obj = obj, type = "hatch" })
             elseif nameLower:find("upgrade") then
-                table.insert(facilityCache, {obj = obj, type = "upgrade"})
+                table.insert(facilityCache, { obj = obj, type = "upgrade" })
             elseif nameLower:find("claim") or nameLower:find("reward") or nameLower:find("collect") then
-                table.insert(facilityCache, {obj = obj, type = "claim"})
+                table.insert(facilityCache, { obj = obj, type = "claim" })
             elseif nameLower:find("rebirth") or nameLower:find("prestige") then
-                table.insert(facilityCache, {obj = obj, type = "rebirth"})
+                table.insert(facilityCache, { obj = obj, type = "rebirth" })
             elseif nameLower:find("treadmill") then
-                table.insert(facilityCache, {obj = obj, type = "treadmill"})
+                table.insert(facilityCache, { obj = obj, type = "treadmill" })
             elseif nameLower:find("place") then
-                table.insert(facilityCache, {obj = obj, type = "place"})
+                table.insert(facilityCache, { obj = obj, type = "place" })
             elseif nameLower:find("fuse") or nameLower:find("combine") or nameLower:find("merge") then
-                table.insert(facilityCache, {obj = obj, type = "fuse"})
+                table.insert(facilityCache, { obj = obj, type = "fuse" })
             end
         end
     end
@@ -328,38 +375,6 @@ local function findFacility(facType)
         if f.type == facType then return f.obj end
     end
     return nil
-end
-
--- ===================== FIND BEST EGG =====================
-local function findBestEggInBiome(biome)
-    local best, bestScore = nil, -1
-    
-    for _, egg in ipairs(eggCache) do
-        if isValidEgg(egg) then
-            local name = getEggName(egg)
-            local data = EGG_DATABASE[name]
-            
-            if data and data.biome == biome then
-                local score = data.value or 0
-                
-                if State.RareHunter then
-                    local rarityBonus = {
-                        ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 5,
-                        ["Epic"] = 10, ["Legendary"] = 25, ["Mythic"] = 50,
-                        ["Secret"] = 100, ["Cosmic"] = 250, ["Eternal"] = 500,
-                        ["Divine"] = 1000,
-                    }
-                    score = score * (rarityBonus[data.rarity] or 1)
-                end
-                
-                if score > bestScore and score >= CONFIG.MinValueToSteal then
-                    bestScore = score
-                    best = egg
-                end
-            end
-        end
-    end
-    return best
 end
 
 -- ===================== FLY SYSTEM =====================
@@ -377,725 +392,570 @@ local function updateFly()
         FlyBodyVelocity.Parent = HRP
     end
     if Hum then Hum.PlatformStand = true; Hum.AutoRotate = false end
-    
     local moveDir = Hum.MoveDirection
     local vertical = (FlyUpInput and 1 or 0) - (FlyDownInput and 1 or 0)
     local direction = Vector3.new(moveDir.X, vertical, moveDir.Z)
     FlyBodyVelocity.Velocity = direction.Magnitude > 0 and direction.Unit * CONFIG.FlySpeed or Vector3.zero
 end
 
--- ===================== FLY CONTROLS =====================
 local FlyControlsGui = nil
 local function CreateFlyControls()
     if FlyControlsGui then return end
     FlyControlsGui = CreateSafeScreenGui("SE_Fly")
     FlyControlsGui.Enabled = false
-    
     local function makeBtn(text, posY)
         local btn = Instance.new("TextButton", FlyControlsGui)
-        btn.Size = UDim2.new(0, 40, 0, 40)
-        btn.Position = UDim2.new(1, -50, posY, 0)
+        btn.Size = UDim2.new(0, 35, 0, 35)
+        btn.Position = UDim2.new(1, -45, posY, 0)
         btn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         btn.BackgroundTransparency = 0.3
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(0, 255, 150)
-        btn.TextSize = 20
+        btn.TextSize = 18
         btn.Font = Enum.Font.GothamBold
         btn.BorderSizePixel = 0
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
         Instance.new("UIStroke", btn).Color = Color3.fromRGB(0, 255, 150)
         return btn
     end
-    
     local UpBtn = makeBtn("⬆", 0.6)
     local DownBtn = makeBtn("⬇", 0.75)
-    
     UpBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyUpInput = true
-        end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyUpInput = true end
     end)
     UpBtn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyUpInput = false
-        end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyUpInput = false end
     end)
     DownBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyDownInput = true
-        end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyDownInput = true end
     end)
     DownBtn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            FlyDownInput = false
-        end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then FlyDownInput = false end
     end)
-    
     RunService.Heartbeat:Connect(function()
         if FlyControlsGui then FlyControlsGui.Enabled = State.Fly end
     end)
 end
 
--- ===================== ESP =====================
-local ESPContainer = nil
-
-local function updateESP()
-    if not State.ESP then
-        if ESPContainer then ESPContainer:Destroy(); ESPContainer = nil end
-        return
-    end
-    
-    if not ESPContainer then
-        ESPContainer = Instance.new("Folder")
-        ESPContainer.Name = "SE_ESP"
-        ESPContainer.Parent = CoreGui
-    end
-    
-    for _, tag in ipairs(ESPContainer:GetChildren()) do tag:Destroy() end
-    if not HRP then return end
-    
-    local nearby = {}
-    for _, egg in ipairs(eggCache) do
-        if isValidEgg(egg) then
-            local pos = egg:IsA("Model") and egg:GetPivot().Position or egg.Position
-            local dist = (HRP.Position - pos).Magnitude
-            if dist < 400 then
-                local name = getEggName(egg)
-                local data = EGG_DATABASE[name]
-                local val = data and data.value or 0
-                local rarity = data and data.rarity or "Unknown"
-                table.insert(nearby, {egg = egg, val = val, rarity = rarity, name = name})
-            end
-        end
-    end
-    
-    table.sort(nearby, function(a, b) return a.val > b.val end)
-    for i = 1, math.min(15, #nearby) do
-        local data = nearby[i]
-        local egg = data.egg
-        local tag = Instance.new("BillboardGui")
-        tag.Adornee = egg
-        tag.Size = UDim2.new(0, 160, 0, 40)
-        tag.AlwaysOnTop = true
-        tag.Parent = ESPContainer
-        
-        local label = Instance.new("TextLabel", tag)
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = "🥚 " .. data.name .. "\n💰 $" .. tostring(data.val) .. " | " .. data.rarity
-        
-        if data.val > 100000000 then
-            label.TextColor3 = Color3.fromRGB(255, 215, 0)
-        elseif data.val > 10000000 then
-            label.TextColor3 = Color3.fromRGB(255, 150, 0)
-        else
-            label.TextColor3 = Color3.fromRGB(0, 255, 150)
-        end
-        label.TextSize = 10
-        label.Font = Enum.Font.GothamBold
-        label.TextStrokeTransparency = 0
-        label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    end
-end
-
 -- ===================== MAIN LOOP =====================
-local lastAction = { steal = 0, hatch = 0, sell = 0, upgrade = 0, claim = 0, rebirth = 0, afk = 0, treadmill = 0, place = 0, fuse = 0 }
+local lastAction = { steal = 0, hatch = 0, sell = 0, upgrade = 0, claim = 0, rebirth = 0, afk = 0, treadmill = 0, place = 0, fuse = 0, serverHop = 0 }
 
 local function StartMainLoop()
     RunService.Heartbeat:Connect(function(dt)
         if not HRP or not Hum then return end
         local now = tick()
-        
+        currentSpeed = getPlayerSpeed()
         updateCaches()
         updateFly()
-        updateESP()
-        
+
+        if CONFIG.SelectedBiome == "Auto" then
+            currentBiome = getBestBiome()
+        else
+            currentBiome = CONFIG.SelectedBiome
+        end
+
+        local biomeData = BIOME_DATA[currentBiome]
+        if biomeData and currentSpeed < biomeData.speedRequired then
+            if CONFIG.SelectedBiome == "Auto" then
+                currentBiome = getBestBiome()
+            else
+                currentBiome = nil
+            end
+        end
+
         if State.SpeedBypass then Hum.WalkSpeed = 100 else Hum.WalkSpeed = CONFIG.WalkSpeed end
         if State.InfiniteJump then Hum.JumpPower = 100 end
-        
         if Char and State.Noclip then
             for _, part in ipairs(Char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
-        
-        if State.WalkWater and HRP then
-            local pos = HRP.Position
-            if pos.Y < 0 then HRP.CFrame = CFrame.new(pos.X, 5, pos.Z) end
-        end
-        
-        if State.Godmode then
-            pcall(function()
-                if Hum.Health < Hum.MaxHealth then Hum.Health = Hum.MaxHealth end
-            end)
-        end
-        
-        if State.Fullbright then
-            pcall(function() Lighting.Brightness = 2; Lighting.GlobalShadows = false end)
-        else
-            pcall(function() Lighting.Brightness = 1; Lighting.GlobalShadows = true end)
-        end
-        
+        if State.WalkWater and HRP and HRP.Position.Y < 0 then HRP.CFrame = CFrame.new(HRP.Position.X, 5, HRP.Position.Z) end
+        if State.Godmode then pcall(function() if Hum.Health < Hum.MaxHealth then Hum.Health = Hum.MaxHealth end end) end
+        if State.Fullbright then pcall(function() Lighting.Brightness = 2; Lighting.GlobalShadows = false end) else pcall(function() Lighting.Brightness = 1; Lighting.GlobalShadows = true end) end
+
         -- Auto Steal
-        if State.AutoSteal and now - lastAction.steal > CONFIG.StealDelay then
+        if State.AutoSteal and currentBiome and now - lastAction.steal > CONFIG.StealDelay then
             lastAction.steal = now
             task.spawn(function()
-                local target = findBestEggInBiome(CONFIG.SelectedBiome)
-                if target then
+                local bestEgg, bestScore = nil, -1
+                for _, egg in ipairs(eggCache) do
+                    if isValidEgg(egg) then
+                        local name = getEggName(egg)
+                        local data = EGG_DATABASE[name]
+                        if data and (data.biome == currentBiome or data.isMutation) then
+                            if currentSpeed < data.speedRequired then continue end
+                            local val = data.value or 0
+                            local score = val
+                            if State.RareHunter then
+                                local rarityPriority = { Common = 1, Uncommon = 2, Rare = 5, Epic = 10, Legendary = 25, Mythic = 50, Secret = 100, Cosmic = 250, Eternal = 500, Divine = 1000 }
+                                score = score * (rarityPriority[data.rarity] or 1)
+                            end
+                            if State.MutationPriority and detectMutation(egg) then score = score * 5 end
+                            if score > bestScore and val >= CONFIG.MinValueToSteal then
+                                bestScore = score
+                                bestEgg = egg
+                            end
+                        end
+                    end
+                end
+                if bestEgg then
+                    if State.EnableGuardianAvoid then
+                        local nearestGuardian, minDist = nil, 30
+                        for _, g in ipairs(guardianCache) do
+                            if g and g:IsA("Model") then
+                                local pos = g:GetPivot().Position
+                                local dist = (HRP.Position - pos).Magnitude
+                                if dist < minDist then minDist = dist; nearestGuardian = g end
+                            end
+                        end
+                        if nearestGuardian then
+                            if State.GuardianFreeze then
+                                pcall(function()
+                                    for _, part in ipairs(nearestGuardian:GetDescendants()) do
+                                        if part:IsA("BasePart") then part.CanCollide = false; part.Anchored = true end
+                                    end
+                                    nearestGuardian:SetPrimaryPartCFrame(nearestGuardian:GetPivot() * CFrame.new(0, -100, 0))
+                                end)
+                            else
+                                local dir = (HRP.Position - nearestGuardian:GetPivot().Position).Unit
+                                teleportTo(HRP.Position + dir * 50)
+                                task.wait(1)
+                                return
+                            end
+                        end
+                    end
                     if State.AutoTP then
-                        local pos = target:IsA("Model") and target:GetPivot().Position or target.Position
+                        local pos = bestEgg:IsA("Model") and bestEgg:GetPivot().Position or bestEgg.Position
                         teleportTo(pos)
                     end
-                    task.wait(CONFIG.StealDelay * 0.5)
-                    safeClick(target)
+                    task.wait(0.2)
+                    safeClick(bestEgg)
                 end
             end)
         end
-        
+
         -- Auto Hatch
         if State.AutoHatch and now - lastAction.hatch > CONFIG.HatchDelay then
             lastAction.hatch = now
-            task.spawn(function()
-                local hatch = findFacility("hatch")
-                if hatch then safeClick(hatch) end
-            end)
+            task.spawn(function() local h = findFacility("hatch"); if h then safeClick(h) end end)
         end
-        
-        -- Auto Sell
         if State.AutoSell and now - lastAction.sell > CONFIG.SellInterval then
             lastAction.sell = now
-            task.spawn(function()
-                local sell = findFacility("sell")
-                if sell then safeClick(sell) end
-            end)
+            task.spawn(function() local s = findFacility("sell"); if s then safeClick(s) end end)
         end
-        
-        -- Auto Upgrade
         if State.AutoUpgrade and now - lastAction.upgrade > CONFIG.UpgradeInterval then
             lastAction.upgrade = now
-            task.spawn(function()
-                local upgrade = findFacility("upgrade")
-                if upgrade then safeClick(upgrade) end
-            end)
+            task.spawn(function() local u = findFacility("upgrade"); if u then safeClick(u) end end)
         end
-        
-        -- Auto Claim
         if State.AutoClaim and now - lastAction.claim > CONFIG.ClaimInterval then
             lastAction.claim = now
-            task.spawn(function()
-                local claim = findFacility("claim")
-                if claim then safeClick(claim) end
-            end)
+            task.spawn(function() local c = findFacility("claim"); if c then safeClick(c) end end)
         end
-        
-        -- Auto Rebirth
         if State.AutoRebirth and now - lastAction.rebirth > CONFIG.RebirthInterval then
             lastAction.rebirth = now
-            task.spawn(function()
-                local rebirth = findFacility("rebirth")
-                if rebirth then safeClick(rebirth) end
-            end)
+            task.spawn(function() local r = findFacility("rebirth"); if r then safeClick(r) end end)
         end
-        
-        -- Auto Treadmill
         if State.AutoTreadmill and now - lastAction.treadmill > 30 then
             lastAction.treadmill = now
-            task.spawn(function()
-                local treadmill = findFacility("treadmill")
-                if treadmill then safeClick(treadmill) end
-            end)
+            task.spawn(function() local t = findFacility("treadmill"); if t then safeClick(t) end end)
         end
-        
-        -- Auto Place
         if State.AutoPlace and now - lastAction.place > 15 then
             lastAction.place = now
-            task.spawn(function()
-                local place = findFacility("place")
-                if place then safeClick(place) end
-            end)
+            task.spawn(function() local p = findFacility("place"); if p then safeClick(p) end end)
         end
-        
-        -- Auto Fuse
-        if State.AutoFuse and now - lastAction.fuse > 120 then
+        if State.AutoFuse and now - lastAction.fuse > 60 then
             lastAction.fuse = now
-            task.spawn(function()
-                local fuse = findFacility("fuse")
-                if fuse then safeClick(fuse) end
+            task.spawn(function() local f = findFacility("fuse"); if f then safeClick(f) end end)
+        end
+
+        if State.AutoEquipBest then
+            pcall(function()
+                for _, gui in ipairs(PlayerGui:GetDescendants()) do
+                    if gui:IsA("TextButton") and gui.Name:lower():find("equip") and gui.Visible then
+                        local cd = gui:FindFirstChildWhichIsA("ClickDetector")
+                        if cd then cd:Click() end
+                        break
+                    end
+                end
             end)
         end
-        
-        -- Anti AFK
+
         if State.AntiAFK and now - lastAction.afk > CONFIG.AFKInterval then
             lastAction.afk = now
-            if HRP then
-                HRP.CFrame = CFrame.new(HRP.Position + Vector3.new(math.random(-2,2), 0, math.random(-2,2)))
+            if HRP then HRP.CFrame = CFrame.new(HRP.Position + Vector3.new(math.random(-2,2), 0, math.random(-2,2))) end
+        end
+
+        if CONFIG.EnableServerHop and State.AutoSteal then
+            local eggCount = 0
+            for _, egg in ipairs(eggCache) do
+                if isValidEgg(egg) then
+                    local data = EGG_DATABASE[getEggName(egg)]
+                    if data and data.biome == currentBiome then eggCount = eggCount + 1 end
+                end
+            end
+            if eggCount < 3 and now - lastAction.serverHop > 120 then
+                lastAction.serverHop = now
+                warn("⚠️ Ít trứng ở " .. currentBiome .. ", đang chuyển server...")
+                pcall(function()
+                    local servers = {}
+                    local req = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+                    local data = HttpService:JSONDecode(req)
+                    if data and data.data then
+                        for _, s in ipairs(data.data) do
+                            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                                table.insert(servers, s.id)
+                            end
+                        end
+                    end
+                    if #servers > 0 then
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LP)
+                    end
+                end)
             end
         end
     end)
 end
 
--- ===================== MENU =====================
+-- ===================== ESP SYSTEM =====================
+local function UpdateESP()
+    pcall(function()
+        if not ESPContainer then
+            ESPContainer = Instance.new("Folder")
+            ESPContainer.Name = "SE_ESP_Container"
+            ESPContainer.Parent = CoreGui
+        end
+        for _, child in ipairs(ESPContainer:GetChildren()) do child:Destroy() end
+        if not State.ESP then return end
+
+        for _, egg in ipairs(eggCache) do
+            if isValidEgg(egg) then
+                local billboard = Instance.new("BillboardGui")
+                billboard.Size = UDim2.new(0, 40, 0, 20)
+                billboard.AlwaysOnTop = true
+                billboard.Adornee = egg:IsA("Model") and egg.PrimaryPart or egg
+                billboard.Parent = ESPContainer
+                local lbl = Instance.new("TextLabel", billboard)
+                lbl.Size = UDim2.new(1, 0, 1, 0)
+                lbl.BackgroundTransparency = 1
+                lbl.Text = "🥚"
+                lbl.TextColor3 = Color3.fromRGB(0, 255, 150)
+                lbl.TextSize = 10
+                lbl.Font = Enum.Font.GothamBold
+            end
+        end
+        for _, g in ipairs(guardianCache) do
+            if g and g:IsA("Model") then
+                local billboard = Instance.new("BillboardGui")
+                billboard.Size = UDim2.new(0, 50, 0, 20)
+                billboard.AlwaysOnTop = true
+                billboard.Adornee = g.PrimaryPart or g:FindFirstChildWhichIsA("BasePart")
+                billboard.Parent = ESPContainer
+                local lbl = Instance.new("TextLabel", billboard)
+                lbl.Size = UDim2.new(1, 0, 1, 0)
+                lbl.BackgroundTransparency = 1
+                lbl.Text = "⚠️"
+                lbl.TextColor3 = Color3.fromRGB(255, 50, 50)
+                lbl.TextSize = 10
+                lbl.Font = Enum.Font.GothamBold
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        if State.ESP then UpdateESP() else if ESPContainer then for _, child in ipairs(ESPContainer:GetChildren()) do child:Destroy() end end end
+        task.wait(2)
+    end
+end)
+
+-- ===================== GIAO DIỆN MENU THU NHỎ =====================
+local function CreateAdvancedTabs(ParentFrame)
+    -- Thanh Tab gọn hơn
+    local TabBar = Instance.new("Frame", ParentFrame)
+    TabBar.Size = UDim2.new(1, -10, 0, 28)
+    TabBar.Position = UDim2.new(0, 5, 0, 35)
+    TabBar.BackgroundTransparency = 1
+
+    local UIListLayoutTab = Instance.new("UIListLayout", TabBar)
+    UIListLayoutTab.FillDirection = Enum.FillDirection.Horizontal
+    UIListLayoutTab.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayoutTab.Padding = UDim.new(0, 4)
+
+    local ContentContainer = Instance.new("Frame", ParentFrame)
+    ContentContainer.Size = UDim2.new(1, -10, 1, -70)
+    ContentContainer.Position = UDim2.new(0, 5, 0, 68)
+    ContentContainer.BackgroundTransparency = 1
+
+    local tabs = {}
+    local function CreateTabContent(name)
+        local scrolling = Instance.new("ScrollingFrame", ContentContainer)
+        scrolling.Size = UDim2.new(1, 0, 1, 0)
+        scrolling.BackgroundTransparency = 1
+        scrolling.CanvasSize = UDim2.new(0, 0, 0, 450)
+        scrolling.ScrollBarThickness = 3
+        scrolling.Visible = false
+        local layout = Instance.new("UIListLayout", scrolling)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 3)
+        tabs[name] = scrolling
+        return scrolling
+    end
+
+    local TabMain = CreateTabContent("Main")
+    local TabTeleport = CreateTabContent("Teleport")
+    local TabSettings = CreateTabContent("Settings")
+
+    local function CreateTabButton(text, targetTab)
+        local btn = Instance.new("TextButton", TabBar)
+        btn.Size = UDim2.new(0.32, 0, 1, 0)
+        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        btn.Text = text
+        btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+        btn.TextSize = 10
+        btn.Font = Enum.Font.GothamBold
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+        btn.Activated:Connect(function()
+            for _, t in pairs(tabs) do t.Visible = false end
+            for _, b in ipairs(TabBar:GetChildren()) do
+                if b:IsA("TextButton") then
+                    b.TextColor3 = Color3.fromRGB(150, 150, 150)
+                    b.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+                end
+            end
+            targetTab.Visible = true
+            btn.TextColor3 = Color3.fromRGB(0, 255, 150)
+            btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        end)
+    end
+
+    CreateTabButton("⚡ Tính năng", TabMain)
+    CreateTabButton("🗺️ Dịch chuyển", TabTeleport)
+    CreateTabButton("⚙️ Cài đặt", TabSettings)
+
+    Tabs = tabs
+    TabMain.Visible = true
+
+    -- Hàm tạo toggle gọn
+    local function AddToggleToTab(parent, name, stateKey)
+        local btn = Instance.new("TextButton", parent)
+        btn.Size = UDim2.new(1, -10, 0, 24)
+        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        btn.Text = "  " .. name .. ": [ TẮT ]"
+        btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+        btn.TextSize = 9
+        btn.Font = Enum.Font.GothamSemibold
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+        btn.Activated:Connect(function()
+            State[stateKey] = not State[stateKey]
+            if State[stateKey] then
+                btn.Text = "  " .. name .. ": [ BẬT ]"
+                btn.TextColor3 = Color3.fromRGB(100, 255, 100)
+            else
+                btn.Text = "  " .. name .. ": [ TẮT ]"
+                btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            end
+        end)
+    end
+
+    -- Tab Main – tính năng chính
+    AddToggleToTab(TabMain, "Auto Steal", "AutoSteal")
+    AddToggleToTab(TabMain, "Auto Hatch", "AutoHatch")
+    AddToggleToTab(TabMain, "Auto Sell", "AutoSell")
+    AddToggleToTab(TabMain, "Auto Upgrade", "AutoUpgrade")
+    AddToggleToTab(TabMain, "Auto Claim", "AutoClaim")
+    AddToggleToTab(TabMain, "Auto Rebirth", "AutoRebirth")
+    AddToggleToTab(TabMain, "Mutation Priority", "MutationPriority")
+    AddToggleToTab(TabMain, "Rare Hunter", "RareHunter")
+    AddToggleToTab(TabMain, "Auto Fuse", "AutoFuse")
+    AddToggleToTab(TabMain, "Fly Mode", "Fly")
+    AddToggleToTab(TabMain, "Speed Bypass", "SpeedBypass")
+    AddToggleToTab(TabMain, "Godmode", "Godmode")
+    AddToggleToTab(TabMain, "Anti-AFK", "AntiAFK")
+
+    -- Tab Dịch chuyển
+    for biomeKey, data in pairs(BIOME_DATA) do
+        local tpBtn = Instance.new("TextButton", TabTeleport)
+        tpBtn.Size = UDim2.new(1, -10, 0, 28)
+        tpBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        tpBtn.Text = "  " .. data.displayName
+        tpBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+        tpBtn.TextSize = 9
+        tpBtn.Font = Enum.Font.GothamBold
+        tpBtn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
+        tpBtn.Activated:Connect(function()
+            CONFIG.SelectedBiome = biomeKey
+            currentBiome = biomeKey
+            pcall(function()
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj:IsA("Model") and obj.Name:lower():find(biomeKey:lower()) then
+                        teleportTo(obj:GetPivot().Position)
+                        break
+                    end
+                end
+            end)
+        end)
+    end
+
+    -- Tab Cài đặt
+    local speedLbl = Instance.new("TextLabel", TabSettings)
+    speedLbl.Size = UDim2.new(1, -10, 0, 20)
+    speedLbl.BackgroundTransparency = 1
+    speedLbl.Text = "Fly Speed: " .. CONFIG.FlySpeed
+    speedLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    speedLbl.TextSize = 9
+    speedLbl.Font = Enum.Font.GothamMedium
+    speedLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local speedBox = Instance.new("TextBox", TabSettings)
+    speedBox.Size = UDim2.new(1, -10, 0, 24)
+    speedBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedBox.TextSize = 9
+    speedBox.PlaceholderText = "Nhập tốc độ bay..."
+    Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 4)
+    speedBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local val = tonumber(speedBox.Text)
+            if val then
+                CONFIG.FlySpeed = val
+                speedLbl.Text = "Fly Speed: " .. tostring(val)
+            end
+        end
+    end)
+
+    AddToggleToTab(TabSettings, "ESP", "ESP")
+    AddToggleToTab(TabSettings, "Auto TP", "AutoTP")
+    AddToggleToTab(TabSettings, "Guardian Freeze", "GuardianFreeze")
+
+    local creditLbl = Instance.new("TextLabel", TabSettings)
+    creditLbl.Size = UDim2.new(1, -10, 0, 20)
+    creditLbl.BackgroundTransparency = 1
+    creditLbl.Text = "⚡ SE v14.2"
+    creditLbl.TextColor3 = Color3.fromRGB(0, 255, 150)
+    creditLbl.TextSize = 9
+    creditLbl.Font = Enum.Font.GothamBold
+    creditLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    local resetBtn = Instance.new("TextButton", TabSettings)
+    resetBtn.Size = UDim2.new(1, -10, 0, 24)
+    resetBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    resetBtn.Text = "🔄 Reset UI"
+    resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    resetBtn.TextSize = 9
+    resetBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0, 4)
+    resetBtn.Activated:Connect(function()
+        pcall(function()
+            for _, gui in ipairs(CoreGui:GetChildren()) do
+                if gui.Name == "SE_Menu" or gui.Name == "SE_Key" then
+                    gui:Destroy()
+                end
+            end
+        end)
+        MenuLoaded = false
+        KeyVerified = false
+        CreateKeyGUI()
+    end)
+end
+
 local function CreateMainMenu()
     if MenuLoaded then return end
     MenuLoaded = true
-    
+
     local ScreenGui = CreateSafeScreenGui("SE_Menu")
-    
     local ToggleBtn = Instance.new("TextButton", ScreenGui)
-    ToggleBtn.Size = UDim2.new(0, 36, 0, 36)
+    ToggleBtn.Size = UDim2.new(0, 32, 0, 32)
     ToggleBtn.Position = UDim2.new(0, 10, 0, 120)
     ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     ToggleBtn.BackgroundTransparency = 0.2
     ToggleBtn.Text = "🥚"
     ToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
-    ToggleBtn.TextSize = 18
+    ToggleBtn.TextSize = 16
     ToggleBtn.Font = Enum.Font.GothamBold
     ToggleBtn.AutoButtonColor = false
     Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
     Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(0, 255, 150)
-    
+
     local MainFrame = Instance.new("Frame", ScreenGui)
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
-    MainFrame.Position = UDim2.new(0.5, -120, 0.5, -170)
+    MainFrame.Position = UDim2.new(0.5, -115, 0.5, -160)
     MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     MainFrame.BackgroundTransparency = 0.15
-    MainFrame.BorderSizePixel = 0
     MainFrame.Visible = false
     MainFrame.ClipsDescendants = true
-    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
     Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(0, 255, 150)
-    
-    -- Title
-    local TitleBar = Instance.new("Frame", MainFrame)
-    TitleBar.Size = UDim2.new(1, 0, 0, 26)
-    TitleBar.BackgroundTransparency = 1
-    
-    local Title = Instance.new("TextLabel", TitleBar)
-    Title.Size = UDim2.new(0.7, 0, 1, 0)
-    Title.Position = UDim2.new(0, 8, 0, 0)
+
+    local Title = Instance.new("TextLabel", MainFrame)
+    Title.Size = UDim2.new(1, 0, 0, 30)
     Title.BackgroundTransparency = 1
-    Title.Text = "🥚 SE ULTIMATE v13.4"
+    Title.Text = "⚡ SE ULTIMATE ⚡"
     Title.TextColor3 = Color3.fromRGB(0, 255, 150)
-    Title.TextSize = 12
+    Title.TextSize = 11
     Title.Font = Enum.Font.GothamBold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local CloseBtn = Instance.new("TextButton", TitleBar)
-    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
-    CloseBtn.Position = UDim2.new(1, -24, 0.5, -10)
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    CloseBtn.BackgroundTransparency = 0.5
-    CloseBtn.Text = "✕"
-    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseBtn.TextSize = 11
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.BorderSizePixel = 0
-    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
-    CloseBtn.Activated:Connect(function()
-        MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
-        task.wait(0.3)
-        MainFrame.Visible = false
-    end)
-    
-    -- Tab
-    local TabBar = Instance.new("Frame", MainFrame)
-    TabBar.Size = UDim2.new(1, 0, 0, 24)
-    TabBar.Position = UDim2.new(0, 0, 0, 26)
-    TabBar.BackgroundTransparency = 1
-    
-    local tabs = {"⚡Auto", "🚀Move", "🛡️Misc"}
-    local currentTab = 1
-    
-    local Content = Instance.new("ScrollingFrame", MainFrame)
-    Content.Size = UDim2.new(1, -8, 1, -58)
-    Content.Position = UDim2.new(0, 4, 0, 54)
-    Content.BackgroundTransparency = 1
-    Content.ScrollBarThickness = 2
-    Content.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 150)
-    Content.CanvasSize = UDim2.new(0, 0, 0, 0)
-    
-    local ContentList = Instance.new("UIListLayout", Content)
-    ContentList.SortOrder = Enum.SortOrder.LayoutOrder
-    ContentList.Padding = UDim.new(0, 2)
-    
-    -- UI Elements
-    local function MakeToggle(text, getter, setter)
-        local frame = Instance.new("TextButton", Content)
-        frame.Size = UDim2.new(1, 0, 0, 24)
-        frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
-        frame.BackgroundTransparency = 0.3
-        frame.BorderSizePixel = 0
-        frame.Text = ""
-        frame.AutoButtonColor = false
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
-        
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(0.7, 0, 1, 0)
-        label.Position = UDim2.new(0, 6, 0, 0)
-        label.BackgroundTransparency = 1
-        label.Text = text
-        label.TextColor3 = Color3.fromRGB(230,230,230)
-        label.TextSize = 10
-        label.Font = Enum.Font.GothamMedium
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local switchBg = Instance.new("Frame", frame)
-        switchBg.Size = UDim2.new(0, 20, 0, 11)
-        switchBg.Position = UDim2.new(1, -24, 0.5, -5.5)
-        switchBg.BackgroundColor3 = Color3.fromRGB(40,40,50)
-        switchBg.BorderSizePixel = 0
-        Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
-        
-        local dot = Instance.new("Frame", switchBg)
-        dot.Size = UDim2.new(0, 7, 0, 7)
-        dot.Position = UDim2.new(0, 2, 0.5, -3.5)
-        dot.BackgroundColor3 = Color3.fromRGB(100,100,100)
-        dot.BorderSizePixel = 0
-        Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-        
-        local state = getter()
-        local function updateSwitch()
-            dot.Position = state and UDim2.new(1, -9, 0.5, -3.5) or UDim2.new(0, 2, 0.5, -3.5)
-            dot.BackgroundColor3 = state and Color3.fromRGB(0,255,150) or Color3.fromRGB(100,100,100)
-            switchBg.BackgroundColor3 = state and Color3.fromRGB(0,80,50) or Color3.fromRGB(40,40,50)
-        end
-        updateSwitch()
-        
-        frame.Activated:Connect(function()
-            state = not state
-            setter(state)
-            updateSwitch()
-        end)
-    end
-    
-    local function MakeSlider(text, min, max, default, callback)
-        local frame = Instance.new("Frame", Content)
-        frame.Size = UDim2.new(1, 0, 0, 32)
-        frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
-        frame.BackgroundTransparency = 0.3
-        frame.BorderSizePixel = 0
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
-        
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(1, -8, 0, 12)
-        label.Position = UDim2.new(0, 6, 0, 1)
-        label.BackgroundTransparency = 1
-        label.Text = text .. ": " .. default
-        label.TextColor3 = Color3.fromRGB(230,230,230)
-        label.TextSize = 9
-        label.Font = Enum.Font.GothamMedium
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local bg = Instance.new("Frame", frame)
-        bg.Size = UDim2.new(1, -12, 0, 4)
-        bg.Position = UDim2.new(0, 6, 0, 20)
-        bg.BackgroundColor3 = Color3.fromRGB(15,15,20)
-        bg.BorderSizePixel = 0
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
-        
-        local fill = Instance.new("Frame", bg)
-        local defaultRel = (default - min) / (max - min)
-        fill.Size = UDim2.new(defaultRel, 0, 1, 0)
-        fill.BackgroundColor3 = Color3.fromRGB(0,255,150)
-        fill.BorderSizePixel = 0
-        Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
-        
-        local thumb = Instance.new("Frame", bg)
-        thumb.Size = UDim2.new(0, 8, 0, 8)
-        thumb.Position = UDim2.new(defaultRel, -4, 0.5, -4)
-        thumb.BackgroundColor3 = Color3.fromRGB(255,255,255)
-        thumb.BorderSizePixel = 0
-        Instance.new("UICorner", thumb).CornerRadius = UDim.new(1, 0)
-        
-        local dragging = false
-        local function updateSlider(x)
-            local bgAbsSize = bg.AbsoluteSize.X
-            if bgAbsSize <= 0 then return end
-            local relX = math.clamp((x - bg.AbsolutePosition.X) / bgAbsSize, 0, 1)
-            local val = math.floor(min + (max - min) * relX)
-            fill.Size = UDim2.new(relX, 0, 1, 0)
-            thumb.Position = UDim2.new(relX, -4, 0.5, -4)
-            label.Text = text .. ": " .. val
-            callback(val)
-        end
-        
-        thumb.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-            end
-        end)
-        bg.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                updateSlider(input.Position.X)
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                updateSlider(input.Position.X)
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
-        end)
-    end
-    
-    local function MakeDropdown(text, options, getter, setter)
-        local frame = Instance.new("Frame", Content)
-        frame.Size = UDim2.new(1, 0, 0, 32)
-        frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
-        frame.BackgroundTransparency = 0.3
-        frame.BorderSizePixel = 0
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
-        
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(0.4, 0, 1, 0)
-        label.Position = UDim2.new(0, 6, 0, 0)
-        label.BackgroundTransparency = 1
-        label.Text = text
-        label.TextColor3 = Color3.fromRGB(230,230,230)
-        label.TextSize = 10
-        label.Font = Enum.Font.GothamMedium
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local dropdown = Instance.new("TextButton", frame)
-        dropdown.Size = UDim2.new(0.5, 0, 1, -4)
-        dropdown.Position = UDim2.new(0.48, 0, 0, 2)
-        dropdown.BackgroundColor3 = Color3.fromRGB(35,35,45)
-        dropdown.BorderSizePixel = 0
-        dropdown.Text = getter()
-        dropdown.TextColor3 = Color3.fromRGB(0,255,150)
-        dropdown.TextSize = 10
-        dropdown.Font = Enum.Font.GothamMedium
-        Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 4)
-        
-        local list = Instance.new("Frame", frame)
-        list.Size = UDim2.new(0.5, 0, 0, 0)
-        list.Position = UDim2.new(0.48, 0, 0, 28)
-        list.BackgroundColor3 = Color3.fromRGB(25,25,35)
-        list.BackgroundTransparency = 0.3
-        list.BorderSizePixel = 0
-        list.ClipsDescendants = true
-        list.Visible = false
-        Instance.new("UICorner", list).CornerRadius = UDim.new(0, 4)
-        
-        local listLayout = Instance.new("UIListLayout", list)
-        listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        listLayout.Padding = UDim.new(0, 2)
-        
-        for _, opt in ipairs(options) do
-            local btn = Instance.new("TextButton", list)
-            btn.Size = UDim2.new(1, 0, 0, 24)
-            btn.BackgroundColor3 = Color3.fromRGB(30,30,40)
-            btn.BorderSizePixel = 0
-            btn.Text = opt
-            btn.TextColor3 = Color3.fromRGB(200,200,200)
-            btn.TextSize = 10
-            btn.Font = Enum.Font.GothamMedium
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 3)
-            
-            btn.Activated:Connect(function()
-                setter(opt)
-                dropdown.Text = opt
-                list.Visible = false
-                list.Size = UDim2.new(0.5, 0, 0, 0)
-            end)
-        end
-        
-        dropdown.Activated:Connect(function()
-            list.Visible = not list.Visible
-            if list.Visible then
-                local count = #options
-                list.Size = UDim2.new(0.5, 0, 0, count * 26 + 4)
-            else
-                list.Size = UDim2.new(0.5, 0, 0, 0)
-            end
-        end)
-    end
-    
-    -- Build tabs
-    local function clearContent()
-        for _, child in ipairs(Content:GetChildren()) do
-            if child:IsA("Frame") or child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-    end
-    
-    local function updateCanvas()
-        local count = 0
-        for _, child in ipairs(Content:GetChildren()) do
-            if child:IsA("Frame") or child:IsA("TextButton") then
-                count = count + 1
-            end
-        end
-        Content.CanvasSize = UDim2.new(0, 0, 0, count * 26 + 10)
-    end
-    
-    local function buildTab1()
-        clearContent()
-        MakeToggle("🥚 Auto Steal", function() return State.AutoSteal end, function(v) State.AutoSteal = v end)
-        MakeToggle("🐣 Auto Hatch", function() return State.AutoHatch end, function(v) State.AutoHatch = v end)
-        MakeToggle("💰 Auto Sell", function() return State.AutoSell end, function(v) State.AutoSell = v end)
-        MakeToggle("⬆️ Auto Upgrade", function() return State.AutoUpgrade end, function(v) State.AutoUpgrade = v end)
-        MakeToggle("🏃 Auto Treadmill", function() return State.AutoTreadmill end, function(v) State.AutoTreadmill = v end)
-        MakeToggle("🎁 Auto Claim", function() return State.AutoClaim end, function(v) State.AutoClaim = v end)
-        MakeToggle("📦 Auto Place", function() return State.AutoPlace end, function(v) State.AutoPlace = v end)
-        MakeToggle("🔄 Auto Rebirth", function() return State.AutoRebirth end, function(v) State.AutoRebirth = v end)
-        MakeDropdown("🌍 Chọn Biome", {"Forest", "Lake", "Desert", "Jungle", "Snow", "Volcano", "Abyss Ocean", "Prehistoric", "Cosmic", "Sakura Blossom", "Titan Temple", "Mutation", "Brainrot"}, 
-            function() return CONFIG.SelectedBiome end, 
-            function(v) CONFIG.SelectedBiome = v end)
-        MakeSlider("⏱️ Steal Delay", 0.5, 5, CONFIG.StealDelay, function(v) CONFIG.StealDelay = v end)
-        MakeSlider("⏱️ Hatch Delay", 0.5, 5, CONFIG.HatchDelay, function(v) CONFIG.HatchDelay = v end)
-        updateCanvas()
-    end
-    
-    local function buildTab2()
-        clearContent()
-        MakeToggle("🚀 Fly", function() return State.Fly end, function(v)
-            State.Fly = v
-            if v then
-                CreateFlyControls()
-                if not FlyBodyVelocity and HRP then
-                    FlyBodyVelocity = Instance.new("BodyVelocity")
-                    FlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-                    FlyBodyVelocity.P = 1e5
-                    FlyBodyVelocity.Parent = HRP
-                end
-                if Hum then Hum.PlatformStand = true; Hum.AutoRotate = false end
-            else
-                if FlyBodyVelocity then FlyBodyVelocity:Destroy(); FlyBodyVelocity = nil end
-                if Hum then Hum.PlatformStand = false; Hum.AutoRotate = true end
-            end
-        end)
-        MakeSlider("✈️ Fly Speed", 20, 400, CONFIG.FlySpeed, function(v) CONFIG.FlySpeed = v end)
-        MakeSlider("🏃 Walk Speed", 16, 300, CONFIG.WalkSpeed, function(v)
-            CONFIG.WalkSpeed = v
-            if Hum then Hum.WalkSpeed = v end
-        end)
-        MakeToggle("⚡ Speed Bypass", function() return State.SpeedBypass end, function(v) State.SpeedBypass = v end)
-        MakeToggle("🌊 Walk on Water", function() return State.WalkWater end, function(v) State.WalkWater = v end)
-        MakeToggle("🦘 Infinite Jump", function() return State.InfiniteJump end, function(v) State.InfiniteJump = v end)
-        MakeToggle("👻 Noclip", function() return State.Noclip end, function(v) State.Noclip = v end)
-        MakeToggle("⏳ Anti AFK", function() return State.AntiAFK end, function(v) State.AntiAFK = v end)
-        updateCanvas()
-    end
-    
-    local function buildTab3()
-        clearContent()
-        MakeToggle("🛡️ God Mode", function() return State.Godmode end, function(v) State.Godmode = v end)
-        MakeToggle("👁️ ESP", function() return State.ESP end, function(v) State.ESP = v end)
-        MakeToggle("🔦 Fullbright", function() return State.Fullbright end, function(v)
-            State.Fullbright = v
-            pcall(function() Lighting.Brightness = v and 2 or 1; Lighting.GlobalShadows = not v end)
-        end)
-        MakeToggle("⭐ Rare Hunter", function() return State.RareHunter end, function(v) State.RareHunter = v end)
-        MakeToggle("🧬 Mutation Priority", function() return State.MutationPriority end, function(v) State.MutationPriority = v end)
-        MakeToggle("🔮 Auto Fuse", function() return State.AutoFuse end, function(v) State.AutoFuse = v end)
-        MakeToggle("🔄 Auto TP", function() return State.AutoTP end, function(v) State.AutoTP = v end)
-        MakeSlider("🎯 Min Value", 0, 1000000, CONFIG.MinValueToSteal, function(v) CONFIG.MinValueToSteal = v end)
-        updateCanvas()
-    end
-    
-    local function updateContent()
-        if currentTab == 1 then buildTab1()
-        elseif currentTab == 2 then buildTab2()
-        elseif currentTab == 3 then buildTab3() end
-    end
-    
-    -- Tab buttons
-    local tabBtns = {}
-    for i, name in ipairs(tabs) do
-        local btn = Instance.new("TextButton", TabBar)
-        btn.Size = UDim2.new(1/3, 0, 1, 0)
-        btn.Position = UDim2.new((i-1)/3, 0, 0, 0)
-        btn.BackgroundColor3 = i==1 and Color3.fromRGB(0,50,30) or Color3.fromRGB(20,20,25)
-        btn.BackgroundTransparency = 0.3
-        btn.Text = name
-        btn.TextColor3 = i==1 and Color3.fromRGB(0,255,150) or Color3.fromRGB(180,180,180)
-        btn.TextSize = 9
-        btn.Font = Enum.Font.GothamBold
-        btn.BorderSizePixel = 0
-        btn.AutoButtonColor = false
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-        btn.Activated:Connect(function()
-            currentTab = i
-            for j, b in ipairs(tabBtns) do
-                b.BackgroundColor3 = j==i and Color3.fromRGB(0,50,30) or Color3.fromRGB(20,20,25)
-                b.TextColor3 = j==i and Color3.fromRGB(0,255,150) or Color3.fromRGB(180,180,180)
-            end
-            updateContent()
-        end)
-        tabBtns[i] = btn
-    end
-    
+
+    CreateAdvancedTabs(MainFrame)
+
     ToggleBtn.Activated:Connect(function()
         MainFrame.Visible = not MainFrame.Visible
         if MainFrame.Visible then
-            MainFrame:TweenSize(UDim2.new(0, 260, 0, 380), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
-            updateContent()
+            MainFrame:TweenSize(UDim2.new(0, 230, 0, 320), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
         else
             MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
         end
     end)
-    
-    updateContent()
-    print("✅ SE ULTIMATE v13.4 loaded!")
+    print("✅ SE ULTIMATE v14.2 loaded - Menu nhỏ gọn!")
 end
 
--- ===================== KEY GUI =====================
 local function CreateKeyGUI()
     local ScreenGui = CreateSafeScreenGui("SE_Key")
-    
     local MainFrame = Instance.new("Frame", ScreenGui)
-    MainFrame.Size = UDim2.new(0, 220, 0, 110)
-    MainFrame.Position = UDim2.new(0.5, -110, 0.5, -55)
+    MainFrame.Size = UDim2.new(0, 200, 0, 100)
+    MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
     MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
     MainFrame.BackgroundTransparency = 0.15
-    MainFrame.BorderSizePixel = 0
-    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
     Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(0, 255, 150)
-    
+
     local Title = Instance.new("TextLabel", MainFrame)
-    Title.Size = UDim2.new(1, 0, 0, 24)
+    Title.Size = UDim2.new(1, 0, 0, 22)
     Title.BackgroundTransparency = 1
-    Title.Text = "🔑 SE ULTIMATE v13.4"
+    Title.Text = "🔑 SE ULTIMATE v14.2"
     Title.TextColor3 = Color3.fromRGB(0, 255, 150)
-    Title.TextSize = 13
+    Title.TextSize = 12
     Title.Font = Enum.Font.GothamBold
-    
+
     local KeyBox = Instance.new("TextBox", MainFrame)
-    KeyBox.Size = UDim2.new(0.8, 0, 0, 26)
-    KeyBox.Position = UDim2.new(0.1, 0, 0, 32)
+    KeyBox.Size = UDim2.new(0.8, 0, 0, 24)
+    KeyBox.Position = UDim2.new(0.1, 0, 0, 28)
     KeyBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    KeyBox.TextSize = 11
-    KeyBox.Font = Enum.Font.GothamMedium
+    KeyBox.TextSize = 10
     KeyBox.PlaceholderText = "Nhập Key..."
-    KeyBox.ClearTextOnFocus = false
-    Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 6)
-    
+    Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 4)
+
     local SubmitBtn = Instance.new("TextButton", MainFrame)
-    SubmitBtn.Size = UDim2.new(0.35, 0, 0, 26)
-    SubmitBtn.Position = UDim2.new(0.325, 0, 0, 70)
+    SubmitBtn.Size = UDim2.new(0.35, 0, 0, 24)
+    SubmitBtn.Position = UDim2.new(0.325, 0, 0, 62)
     SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
     SubmitBtn.Text = "OK"
     SubmitBtn.TextColor3 = Color3.fromRGB(10, 10, 15)
-    SubmitBtn.TextSize = 11
-    SubmitBtn.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 6)
-    
+    SubmitBtn.TextSize = 10
+    Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 4)
+
     local ErrorLabel = Instance.new("TextLabel", MainFrame)
     ErrorLabel.Size = UDim2.new(1, 0, 0, 16)
-    ErrorLabel.Position = UDim2.new(0, 0, 0, 96)
+    ErrorLabel.Position = UDim2.new(0, 0, 0, 86)
     ErrorLabel.BackgroundTransparency = 1
     ErrorLabel.Text = ""
     ErrorLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-    ErrorLabel.TextSize = 9
+    ErrorLabel.TextSize = 8
     ErrorLabel.Font = Enum.Font.GothamMedium
-    
+
     local function submitKey()
         if KeyBox.Text == CORRECT_KEY then
             KeyVerified = true
@@ -1112,13 +972,28 @@ local function CreateKeyGUI()
     KeyBox.FocusLost:Connect(function(enter) if enter then submitKey() end end)
 end
 
+-- ===================== TỐI ƯU HÓA BỘ NHỚ =====================
+task.spawn(function()
+    while true do
+        task.wait(60)
+        pcall(function()
+            collectgarbage("collect")
+            if ESPContainer then
+                for _, child in ipairs(ESPContainer:GetChildren()) do
+                    if not child:IsA("BillboardGui") then
+                        child:Destroy()
+                    end
+                end
+            end
+        end)
+    end
+end)
+
 -- ===================== KHỞI CHẠY =====================
 GetChar()
 AntiKickFix()
 task.wait(1)
 CreateKeyGUI()
-print("🔑 SE ULTIMATE v13.4 | Key: 123456789e")
-
--- Khởi động main loop
 task.wait(0.5)
 StartMainLoop()
+print("🚀 [SE ULTIMATE v14.2] Menu nhỏ gọn, sẵn sàng chiến!")
